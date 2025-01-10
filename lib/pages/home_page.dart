@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:badges/badges.dart' as badges;
 import 'package:provider/provider.dart';
@@ -100,17 +100,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // كاروسيل العروض
-            CarouselSlider(
-              options: CarouselOptions(
-                height: 200.0,
-                autoPlay: true,
-                enlargeCenterPage: true,
-                aspectRatio: 16/9,
-                autoPlayCurve: Curves.fastOutSlowIn,
-                enableInfiniteScroll: true,
-                autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                viewportFraction: 0.8,
-              ),
+            FlutterCarousel(
               items: carouselImages.map((url) {
                 return Builder(
                   builder: (BuildContext context) {
@@ -137,6 +127,19 @@ class _HomePageState extends State<HomePage> {
                   },
                 );
               }).toList(),
+              options: CarouselOptions(
+                height: 200.0,
+                aspectRatio: 16/9,
+                viewportFraction: 0.8,
+                showIndicator: true,
+                slideIndicator: CircularSlideIndicator(),
+                autoPlay: true,
+                autoPlayInterval: const Duration(seconds: 3),
+                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
+                enlargeCenterPage: true,
+                enableInfiniteScroll: true,
+              ),
             ),
 
             // الأقسام
