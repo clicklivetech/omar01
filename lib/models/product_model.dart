@@ -1,6 +1,4 @@
-import 'package:uuid/uuid.dart';
-
-class Product {
+class ProductModel {
   final String id;
   final String name;
   final String description;
@@ -17,8 +15,8 @@ class Product {
   final bool dailyDeals;
   final double rating;
 
-  Product({
-    String? id,
+  ProductModel({
+    required this.id,
     required this.name,
     required this.description,
     required this.price,
@@ -26,43 +24,37 @@ class Product {
     required this.categoryId,
     required this.stockQuantity,
     required this.imageUrl,
-    this.isFeatured = false,
-    this.isActive = true,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    required this.isFeatured,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
     required this.unit,
-    this.dailyDeals = false,
+    required this.dailyDeals,
     this.rating = 0.0,
-  })  : this.id = id ?? const Uuid().v4(),
-        this.createdAt = createdAt ?? DateTime.now(),
-        this.updatedAt = updatedAt ?? DateTime.now();
+  });
 
-  bool get isOnSale => discountPrice != null && discountPrice! < price;
-
-  // تحويل من JSON
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    return ProductModel(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
-      price: (json['price'] as num).toDouble(),
-      discountPrice: json['discount_price'] != null
-          ? (json['discount_price'] as num).toDouble()
+      price: double.parse(json['price'].toString()),
+      discountPrice: json['discount_price'] != null 
+          ? double.parse(json['discount_price'].toString())
           : null,
       categoryId: json['category_id'] as String,
       stockQuantity: json['stock_quantity'] as int,
       imageUrl: json['image_url'] as String,
-      isFeatured: json['is_featured'] as bool? ?? false,
-      isActive: json['is_active'] as bool? ?? true,
+      isFeatured: json['is_featured'] as bool,
+      isActive: json['is_active'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       unit: json['unit'] as String,
-      dailyDeals: json['daily_deals'] as bool? ?? false,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      dailyDeals: json['daily_deals'] as bool,
+      rating: json['rating'] != null ? double.parse(json['rating'].toString()) : 0.0,
     );
   }
 
-  // تحويل إلى JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -83,8 +75,8 @@ class Product {
     };
   }
 
-  // نسخة معدلة من المنتج
-  Product copyWith({
+  ProductModel copyWith({
+    String? id,
     String? name,
     String? description,
     double? price,
@@ -100,8 +92,8 @@ class Product {
     bool? dailyDeals,
     double? rating,
   }) {
-    return Product(
-      id: this.id,
+    return ProductModel(
+      id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
       price: price ?? this.price,
@@ -119,15 +111,17 @@ class Product {
     );
   }
 
-  // حساب نسبة الخصم
-  double? get discountPercentage {
-    if (discountPrice == null || discountPrice! >= price) return null;
-    return ((price - discountPrice!) / price * 100).roundToDouble();
-  }
+  bool get hasDiscount => discountPrice != null && discountPrice! < price;
 
-  // السعر النهائي بعد الخصم
   double get finalPrice => discountPrice ?? price;
 
-  // هل المنتج متوفر في المخزون
-  bool get isInStock => stockQuantity > 0;
+  double get discountPercentage {
+    if (!hasDiscount) return 0.0;
+    return ((price - discountPrice!) / price * 100);
+  }
+
+  @override
+  String toString() {
+    return 'ProductModel(id: $id, name: $name, price: $price, discountPrice: $discountPrice, categoryId: $categoryId, stockQuantity: $stockQuantity, isFeatured: $isFeatured, isActive: $isActive, unit: $unit, dailyDeals: $dailyDeals, rating: $rating)';
+  }
 }

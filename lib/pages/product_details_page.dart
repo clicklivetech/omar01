@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import '../models/product.dart';
+import '../models/product_model.dart';
 import '../providers/app_state.dart';
 
 class ProductDetailsPage extends StatelessWidget {
-  final Product product;
+  final ProductModel product;
 
-  const ProductDetailsPage({super.key, required this.product});
+  const ProductDetailsPage({Key? key, required this.product}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +53,9 @@ class ProductDetailsPage extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          if (product.oldPrice != null)
+                          if (product.discountPrice != null)
                             Text(
-                              '${product.oldPrice!.toStringAsFixed(2)} ج.م',
+                              '${product.discountPrice!.toStringAsFixed(2)} ج.م',
                               style: const TextStyle(
                                 decoration: TextDecoration.lineThrough,
                                 color: Colors.grey,

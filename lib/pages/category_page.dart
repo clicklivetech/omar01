@@ -19,7 +19,7 @@ class CategoryPage extends StatelessWidget {
       body: Consumer<AppState>(
         builder: (context, appState, child) {
           final categoryProducts = appState.products
-              .where((product) => product.category == category)
+              .where((product) => product.categoryId == category)
               .toList();
 
           if (categoryProducts.isEmpty) {
@@ -58,16 +58,6 @@ class CategoryPage extends StatelessWidget {
               final product = categoryProducts[index];
               return ProductCard(
                 product: product,
-                onAddToCart: () {
-                  appState.addToCart(product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تمت الإضافة إلى السلة'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                onAddToFavorite: () => appState.toggleFavorite(product),
               );
             },
           );

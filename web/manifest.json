@@ -1,11 +1,11 @@
 {
-    "name": "omar01",
-    "short_name": "omar01",
+    "name": "عمر ماركت",
+    "short_name": "عمر ماركت",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#6E58A8",
+    "theme_color": "#6E58A8",
+    "description": "متجر عمر الإلكتروني",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

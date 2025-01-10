@@ -1,24 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/supabase_service.dart';
-import 'pages/home_page.dart';
+import 'services/cart_service.dart';
+import 'services/favorites_service.dart';
+import 'pages/main_layout.dart';
 import 'providers/app_state.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseService.initialize();
-  runApp(const MyApp());
+  
+  // Initialize SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  
+  runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SharedPreferences prefs;
+  
+  const MyApp({super.key, required this.prefs});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AppState(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) {
+            final appState = AppState();
+            appState.addDummyProducts(); // إضافة بيانات تجريبية
+            return appState;
+          }
+        ),
+        Provider<CartService>(create: (context) => CartService(prefs)),
+        Provider<FavoritesService>(create: (context) => FavoritesService(prefs)),
+      ],
       child: MaterialApp(
         title: 'عمر ماركت',
         theme: ThemeData(
@@ -38,7 +56,7 @@ class MyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        home: const HomePage(),
+        home: const MainLayout(),
       ),
     );
   }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
-import '../models/product.dart';
+import '../services/cart_service.dart';
+import '../models/cart_item.dart';
+import '../utils/notifications.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -14,9 +15,9 @@ class CartPage extends StatelessWidget {
         backgroundColor: const Color(0xFF6E58A8),
         foregroundColor: Colors.white,
       ),
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
-          if (appState.cartItems.isEmpty) {
+      body: Consumer<CartService>(
+        builder: (context, cartService, child) {
+          if (cartService.getCartItems().isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -43,10 +44,19 @@ class CartPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ListView.builder(
-                  itemCount: appState.cartItems.length,
+                  itemCount: cartService.getCartItems().length,
                   itemBuilder: (context, index) {
-                    final product = appState.cartItems[index];
-                    return CartItemCard(product: product);
+                    final cartItem = cartService.getCartItems()[index];
+                    return CartItemCard(
+                      cartItem: cartItem,
+                      onRemove: () {
+                        cartService.removeFromCart(cartItem.product.id);
+                        AppNotifications.showSuccess(
+                          context,
+                          'تم إزالة المنتج من السلة',
+                        );
+                      },
+                    );
                   },
                 ),
               ),
@@ -76,11 +86,11 @@ class CartPage extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${appState.cartTotal.toStringAsFixed(2)} ج.م',
-                          style: const TextStyle(
+                          '${cartService.getCartTotal().toStringAsFixed(2)} ج.م',
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF6E58A8),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],
@@ -95,12 +105,9 @@ class CartPage extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         onPressed: () {
-                          // إضافة وظيفة الدفع هنا
+                          // TODO: Implement checkout
                         },
-                        child: const Text(
-                          'اتمام الشراء',
-                          style: TextStyle(fontSize: 18),
-                        ),
+                        child: const Text('اتمام الشراء'),
                       ),
                     ),
                   ],
@@ -115,11 +122,13 @@ class CartPage extends StatelessWidget {
 }
 
 class CartItemCard extends StatelessWidget {
-  final Product product;
+  final CartItem cartItem;
+  final VoidCallback onRemove;
 
   const CartItemCard({
     super.key,
-    required this.product,
+    required this.cartItem,
+    required this.onRemove,
   });
 
   @override
@@ -130,24 +139,22 @@ class CartItemCard extends StatelessWidget {
         padding: const EdgeInsets.all(8.0),
         child: Row(
           children: [
-            // صورة المنتج
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
-                product.imageUrl,
+                cartItem.product.imageUrl,
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
               ),
             ),
             const SizedBox(width: 16),
-            // تفاصيل المنتج
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.name,
+                    cartItem.product.name,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -155,23 +162,19 @@ class CartItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${product.price.toStringAsFixed(2)} ج.م',
-                    style: const TextStyle(
-                      color: Color(0xFF6E58A8),
+                    '${cartItem.product.price.toStringAsFixed(2)} ج.م',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
-            // زر الحذف
             IconButton(
               icon: const Icon(Icons.delete_outline),
               color: Colors.red,
-              onPressed: () {
-                Provider.of<AppState>(context, listen: false)
-                    .removeFromCart(product);
-              },
+              onPressed: onRemove,
             ),
           ],
         ),

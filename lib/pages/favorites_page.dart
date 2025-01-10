@@ -16,57 +16,32 @@ class FavoritesPage extends StatelessWidget {
       ),
       body: Consumer<AppState>(
         builder: (context, appState, child) {
-          if (appState.favoriteItems.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 100,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'لا توجد منتجات في المفضلة',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+          final favorites = appState.favoriteItems;
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: appState.favoriteItems.length,
-            itemBuilder: (context, index) {
-              final product = appState.favoriteItems[index];
-              return ProductCard(
-                product: product,
-                onAddToCart: () {
-                  appState.addToCart(product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تمت الإضافة إلى السلة'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                onAddToFavorite: () {
-                  appState.toggleFavorite(product);
-                },
-              );
-            },
-          );
+          return favorites.isEmpty
+              ? const Center(
+                  child: Text(
+                    'لا توجد منتجات في المفضلة',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.7,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: favorites.length,
+                  itemBuilder: (context, index) {
+                    return ProductCard(
+                      product: favorites[index],
+                      width: double.infinity,
+                      height: double.infinity,
+                    );
+                  },
+                );
         },
       ),
     );

@@ -1,164 +1,189 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import '../models/product.dart';
+import '../models/product_model.dart';
+import '../services/cart_service.dart';
+import '../services/favorites_service.dart';
+import '../utils/notifications.dart';
+import 'package:provider/provider.dart';
+import '../pages/product_details_page.dart';
 
 class ProductCard extends StatelessWidget {
-  final Product product;
-  final VoidCallback? onAddToCart;
-  final VoidCallback? onAddToFavorite;
+  final ProductModel product;
+  final double width;
+  final double height;
 
   const ProductCard({
     super.key,
     required this.product,
-    this.onAddToCart,
-    this.onAddToFavorite,
+    this.width = 200,
+    this.height = 300,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // صورة المنتج
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                child: Image.network(
-                  product.imageUrl,
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+    final cartService = context.watch<CartService>();
+    final favoritesService = context.watch<FavoritesService>();
+    final isInCart = cartService.getCartItems().any((item) => item.product.id == product.id);
+    final isInFavorites = favoritesService.getFavorites().any((item) => item.product.id == product.id);
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: Card(
+        elevation: 2,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProductDetailsPage(product: product),
               ),
-              if (product.isOnSale)
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${product.discountPercentage.toStringAsFixed(0)}% خصم',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // صورة المنتج مع زر المفضلة
+              Stack(
+                children: [
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: Hero(
+                      tag: 'product_image_${product.id}',
+                      child: Image.network(
+                        product.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: Icon(Icons.error_outline),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: IconButton(
-                  icon: const Icon(Icons.favorite_border),
-                  color: const Color(0xFF6E58A8),
-                  onPressed: onAddToFavorite,
+                  // زر المفضلة
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          isInFavorites ? Icons.favorite : Icons.favorite_border,
+                          color: isInFavorites ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: () {
+                          if (isInFavorites) {
+                            favoritesService.removeFromFavorites(product.id);
+                            AppNotifications.showSuccess(
+                              context,
+                              'تم إزالة المنتج من المفضلة',
+                            );
+                          } else {
+                            favoritesService.addToFavorites(product);
+                            AppNotifications.showSuccess(
+                              context,
+                              'تم إضافة المنتج إلى المفضلة',
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // معلومات المنتج
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // اسم المنتج
+                      Text(
+                        product.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      // السعر
+                      Text(
+                        '${product.price} جنيه',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const Spacer(),
+                      // زر إضافة/إزالة من السلة
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isInCart
+                              ? () {
+                                  cartService.removeFromCart(product.id);
+                                  AppNotifications.showSuccess(
+                                    context,
+                                    'تم إزالة المنتج من السلة',
+                                  );
+                                }
+                              : () {
+                                  cartService.addToCart(product);
+                                  AppNotifications.showSuccess(
+                                    context,
+                                    'تم إضافة المنتج إلى السلة',
+                                  );
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isInCart
+                                ? Colors.red
+                                : Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            isInCart ? 'إزالة من السلة' : 'إضافة للسلة',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  product.description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    RatingBar.builder(
-                      initialRating: product.rating,
-                      minRating: 1,
-                      direction: Axis.horizontal,
-                      allowHalfRating: true,
-                      itemCount: 5,
-                      itemSize: 16,
-                      itemBuilder: (context, _) => const Icon(
-                        Icons.star,
-                        color: Colors.amber,
-                      ),
-                      onRatingUpdate: (rating) {
-                        // يمكن إضافة وظيفة التقييم هنا
-                      },
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      product.rating.toString(),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (product.oldPrice != null)
-                          Text(
-                            '${product.oldPrice!.toStringAsFixed(2)} ج.م',
-                            style: const TextStyle(
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
-                          ),
-                        Text(
-                          '${product.price.toStringAsFixed(2)} ج.م',
-                          style: const TextStyle(
-                            color: Color(0xFF6E58A8),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    ElevatedButton(
-                      onPressed: onAddToCart,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6E58A8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                      ),
-                      child: const Text(
-                        'أضف للسلة',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

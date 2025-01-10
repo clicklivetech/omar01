@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
+import '../services/supabase_service.dart';
 import '../widgets/product_card.dart';
+import '../models/product_model.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -13,11 +13,40 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  List<ProductModel> _searchResults = [];
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _performSearch(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isLoading = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final results = await SupabaseService.searchProducts(query);
+      setState(() {
+        _searchResults = results;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _searchResults = [];
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -28,6 +57,7 @@ class _SearchPageState extends State<SearchPage> {
         foregroundColor: Colors.white,
         title: TextField(
           controller: _searchController,
+          textDirection: TextDirection.rtl,
           style: const TextStyle(color: Colors.white),
           decoration: const InputDecoration(
             hintText: 'ابحث عن منتجات...',
@@ -38,11 +68,18 @@ class _SearchPageState extends State<SearchPage> {
             setState(() {
               _searchQuery = value;
             });
+            _performSearch(value);
           },
         ),
       ),
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
+      body: Builder(
+        builder: (context) {
+          if (_isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
           if (_searchQuery.isEmpty) {
             return const Center(
               child: Column(
@@ -66,15 +103,7 @@ class _SearchPageState extends State<SearchPage> {
             );
           }
 
-          final searchResults = appState.products
-              .where((product) =>
-                  product.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                  product.description
-                      .toLowerCase()
-                      .contains(_searchQuery.toLowerCase()))
-              .toList();
-
-          if (searchResults.isEmpty) {
+          if (_searchResults.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -105,22 +134,10 @@ class _SearchPageState extends State<SearchPage> {
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
-            itemCount: searchResults.length,
+            itemCount: _searchResults.length,
             itemBuilder: (context, index) {
-              final product = searchResults[index];
-              return ProductCard(
-                product: product,
-                onAddToCart: () {
-                  appState.addToCart(product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تمت الإضافة إلى السلة'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                onAddToFavorite: () => appState.toggleFavorite(product),
-              );
+              final product = _searchResults[index];
+              return ProductCard(product: product);
             },
           );
         },
