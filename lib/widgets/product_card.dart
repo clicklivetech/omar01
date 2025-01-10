@@ -5,6 +5,7 @@ import '../services/favorites_service.dart';
 import '../utils/notifications.dart';
 import 'package:provider/provider.dart';
 import '../pages/product_details_page.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -53,26 +54,21 @@ class ProductCard extends StatelessWidget {
                     aspectRatio: 1,
                     child: Hero(
                       tag: 'product_image_${product.id}',
-                      child: Image.network(
-                        product.imageUrl,
+                      child: CachedNetworkImage(
+                        imageUrl: product.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: Icon(Icons.error_outline),
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: Colors.grey[200],
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        },
+                        placeholder: (context, url) => Container(
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: Icon(Icons.error_outline),
+                          ),
+                        ),
                       ),
                     ),
                   ),
