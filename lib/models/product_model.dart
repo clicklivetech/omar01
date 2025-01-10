@@ -12,6 +12,7 @@ class ProductModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String unit;
+  final String? searchVector;
   final bool dailyDeals;
   final double rating;
 
@@ -29,6 +30,7 @@ class ProductModel {
     required this.createdAt,
     required this.updatedAt,
     required this.unit,
+    this.searchVector,
     required this.dailyDeals,
     this.rating = 0.0,
   });
@@ -50,6 +52,7 @@ class ProductModel {
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       unit: json['unit'] as String,
+      searchVector: json['search_vector'] as String?,
       dailyDeals: json['daily_deals'] as bool,
       rating: json['rating'] != null ? double.parse(json['rating'].toString()) : 0.0,
     );
@@ -70,6 +73,7 @@ class ProductModel {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'unit': unit,
+      'search_vector': searchVector,
       'daily_deals': dailyDeals,
       'rating': rating,
     };
@@ -89,6 +93,7 @@ class ProductModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? unit,
+    String? searchVector,
     bool? dailyDeals,
     double? rating,
   }) {
@@ -106,6 +111,7 @@ class ProductModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       unit: unit ?? this.unit,
+      searchVector: searchVector ?? this.searchVector,
       dailyDeals: dailyDeals ?? this.dailyDeals,
       rating: rating ?? this.rating,
     );

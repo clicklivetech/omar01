@@ -117,6 +117,7 @@ class _HomePageState extends State<HomePage> {
           .select()
           .eq('is_active', true)
           .order('priority', ascending: true);
+      print('Banners loaded: ${bannersResponse.length}');
 
       // Load categories
       final categoriesResponse = await Supabase.instance.client
@@ -125,6 +126,7 @@ class _HomePageState extends State<HomePage> {
           .eq('is_home', true)
           .order('created_at', ascending: true)
           .limit(10);
+      print('Categories loaded: ${categoriesResponse.length}');
 
       // Load featured products
       final productsResponse = await Supabase.instance.client
@@ -134,6 +136,7 @@ class _HomePageState extends State<HomePage> {
           .eq('is_active', true)
           .order('created_at', ascending: false)
           .limit(10);
+      print('Featured products loaded: ${productsResponse.length}');
 
       // Load special offers
       final specialOffersResponse = await Supabase.instance.client
@@ -143,6 +146,7 @@ class _HomePageState extends State<HomePage> {
           .eq('is_active', true)
           .order('created_at', ascending: false)
           .limit(10);
+      print('Special offers loaded: ${specialOffersResponse.length}');
 
       setState(() {
         banners = (bannersResponse as List).map((item) => Banner.fromJson(item)).toList();
@@ -152,8 +156,8 @@ class _HomePageState extends State<HomePage> {
         isLoading = false;
       });
     } catch (e) {
+      print('Error loading data: $e');
       setState(() => isLoading = false);
-      debugPrint('Error loading data: $e');
     }
   }
 
@@ -383,91 +387,12 @@ class _HomePageState extends State<HomePage> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: featuredProducts.length,
             itemBuilder: (context, index) {
-              final product = featuredProducts[index];
-              return Container(
-                width: 200,
-                margin: const EdgeInsets.only(right: 16),
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: CachedNetworkImage(
-                            imageUrl: product.imageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: Colors.grey[200],
-                              child: const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.error),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              product.description,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Text(
-                                  product.discountPrice != null
-                                      ? '${product.discountPrice} جنيه'
-                                      : '${product.price} جنيه',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                if (product.discountPrice != null)
-                                  Text(
-                                    '${product.price} جنيه',
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      decoration: TextDecoration.lineThrough,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: ProductCard(
+                  product: featuredProducts[index],
+                  width: 200,
+                  height: 300,
                 ),
               );
             },
@@ -580,31 +505,33 @@ class _HomePageState extends State<HomePage> {
               const Text(
                 'عروض خاصة',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/special-offers');
+                  // Navigate to special offers page
                 },
-                child: const Text('عرض الكل'),
+                child: const Text('المزيد'),
               ),
             ],
           ),
         ),
         SizedBox(
-          height: 280,
+          height: 320,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: specialOffers.length,
             itemBuilder: (context, index) {
-              final product = specialOffers[index];
-              return Container(
-                width: 200,
-                margin: const EdgeInsets.only(right: 16),
-                child: ProductCard(product: product),
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: ProductCard(
+                  product: specialOffers[index],
+                  width: 200,
+                  height: 300,
+                ),
               );
             },
           ),
