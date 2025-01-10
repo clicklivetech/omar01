@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
-import 'login_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   Future<void> _signOut(BuildContext context) async {
-    await SupabaseService.client.auth.signOut();
-    if (context.mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+    try {
+      await SupabaseService.signOut();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: ${e.toString()}')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = SupabaseService.client.auth.currentUser;
-    final email = user?.email ?? '';
-
+    final user = SupabaseService.currentUser;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('الصفحة الرئيسية'),
@@ -35,13 +36,20 @@ class HomePage extends StatelessWidget {
           children: [
             const Text(
               'مرحباً بك!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24),
             ),
             const SizedBox(height: 16),
             Text(
-              'البريد الإلكتروني: $email',
+              'البريد الإلكتروني: ${user?.email ?? ""}',
               style: const TextStyle(fontSize: 16),
             ),
+            if (user?.userMetadata?['name'] != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'الاسم: ${user?.userMetadata?['name']}',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
           ],
         ),
       ),

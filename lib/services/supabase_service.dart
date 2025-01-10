@@ -1,48 +1,44 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
-  static SupabaseClient? _client;
+  static final supabase = Supabase.instance.client;
 
   static Future<void> initialize() async {
-    await dotenv.load();
-    
     await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+      url: 'https://vvjgjuvcbqnrzbjkcloa.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2amdqdXZjYnFucnpiamtjbG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMxMjM0MjMsImV4cCI6MjA0ODY5OTQyM30.dAu01n_o4KOZ9L8W42U8Qd6XER4bH2SuXzwWZt09t7Q',
     );
-    
-    _client = Supabase.instance.client;
   }
 
-  static SupabaseClient get client {
-    if (_client == null) {
-      throw Exception('Supabase client not initialized');
-    }
-    return _client!;
+  // تسجيل الدخول
+  static Future<AuthResponse> signIn({
+    required String email,
+    required String password,
+  }) async {
+    return await supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
   }
 
-  // مثال على دالة للحصول على البيانات
-  static Future<List<Map<String, dynamic>>> getData(String tableName) async {
-    try {
-      final response = await client
-          .from(tableName)
-          .select();
-      
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      throw Exception('Failed to fetch data: $e');
-    }
+  // إنشاء حساب جديد
+  static Future<AuthResponse> signUp({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    return await supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {'name': name},
+    );
   }
 
-  // مثال على دالة لإضافة بيانات
-  static Future<void> insertData(String tableName, Map<String, dynamic> data) async {
-    try {
-      await client
-          .from(tableName)
-          .insert(data);
-    } catch (e) {
-      throw Exception('Failed to insert data: $e');
-    }
+  // تسجيل الخروج
+  static Future<void> signOut() async {
+    await supabase.auth.signOut();
   }
+
+  // الحصول على المستخدم الحالي
+  static User? get currentUser => supabase.auth.currentUser;
 }

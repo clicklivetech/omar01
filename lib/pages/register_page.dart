@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/supabase_service.dart';
-import 'home_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -16,22 +15,32 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isLoading = false;
 
   Future<void> _signUp() async {
+    if (_emailController.text.isEmpty || 
+        _passwordController.text.isEmpty ||
+        _nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الرجاء إدخال جميع البيانات المطلوبة')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      await SupabaseService.client.auth.signUp(
+      await SupabaseService.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
-        data: {'name': _nameController.text.trim()},
+        name: _nameController.text.trim(),
       );
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن')),
         );
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(content: Text('خطأ: ${e.toString()}')),
         );
       }
     }
