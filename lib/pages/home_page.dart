@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'categories_page.dart';
+import '../widgets/product_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -85,9 +85,51 @@ class Category {
   }
 }
 
+class Product {
+  final String id;
+  final String name;
+  final String description;
+  final double price;
+  final double? oldPrice;
+  final String imageUrl;
+  final bool isFeatured;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Product({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.price,
+    this.oldPrice,
+    required this.imageUrl,
+    required this.isFeatured,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      price: (json['price'] as num).toDouble(),
+      oldPrice: json['old_price'] != null ? (json['old_price'] as num).toDouble() : null,
+      imageUrl: json['image_url'],
+      isFeatured: json['is_featured'] ?? false,
+      isActive: json['is_active'] ?? false,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+    );
+  }
+}
+
 class _HomePageState extends State<HomePage> {
   List<Banner> banners = [];
   List<Category> categories = [];
+  List<Product> featuredProducts = [];
   bool isLoading = true;
 
   @override
@@ -115,9 +157,19 @@ class _HomePageState extends State<HomePage> {
           .order('created_at', ascending: true)
           .limit(10);
 
+      // Load featured products
+      final productsResponse = await Supabase.instance.client
+          .from('products')
+          .select()
+          .eq('is_featured', true)
+          .eq('is_active', true)
+          .order('created_at', ascending: false)
+          .limit(10);
+
       setState(() {
         banners = (bannersResponse as List).map((item) => Banner.fromJson(item)).toList();
         categories = (categoriesResponse as List).map((item) => Category.fromJson(item)).toList();
+        featuredProducts = (productsResponse as List).map((item) => Product.fromJson(item)).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -253,8 +305,12 @@ class _HomePageState extends State<HomePage> {
               ),
               TextButton(
                 onPressed: () {
-                  // Update the selected index in AppState to show Categories tab
-                  context.read<AppState>().updateSelectedIndex(1);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CategoriesPage(),
+                    ),
+                  );
                 },
                 child: const Text('المزيد'),
               ),
@@ -313,6 +369,135 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildFeaturedProductsSection() {
+    if (featuredProducts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'منتجات مميزة',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Navigate to featured products page
+                },
+                child: const Text('المزيد'),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 320,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: featuredProducts.length,
+            itemBuilder: (context, index) {
+              final product = featuredProducts[index];
+              return Container(
+                width: 200,
+                margin: const EdgeInsets.only(right: 16),
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: CachedNetworkImage(
+                            imageUrl: product.imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.error),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              product.description,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text(
+                                  '${product.price.toStringAsFixed(2)} جنيه',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                if (product.oldPrice != null) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${product.oldPrice!.toStringAsFixed(2)} جنيه',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -323,11 +508,11 @@ class _HomePageState extends State<HomePage> {
               child: ListView(
                 children: [
                   _buildBannerCarousel(),
+                  const SizedBox(height: 16),
                   _buildCategoriesSection(),
                   const SizedBox(height: 16),
-                  const Center(
-                    child: Text('الصفحة الرئيسية'),
-                  ),
+                  _buildFeaturedProductsSection(),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
