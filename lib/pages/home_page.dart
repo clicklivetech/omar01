@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'categories_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -50,33 +51,76 @@ class Banner {
   }
 }
 
+class Category {
+  final String id;
+  final String name;
+  final String? description;
+  final String imageUrl;
+  final bool isHome;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Category({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.imageUrl,
+    required this.isHome,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Category.fromJson(Map<String, dynamic> json) {
+    return Category(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      imageUrl: json['image_url'],
+      isHome: json['is_home'] ?? false,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+    );
+  }
+}
+
 class _HomePageState extends State<HomePage> {
   List<Banner> banners = [];
+  List<Category> categories = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadBanners();
+    _loadData();
   }
 
-  Future<void> _loadBanners() async {
+  Future<void> _loadData() async {
     try {
-      final response = await Supabase.instance.client
+      setState(() => isLoading = true);
+      
+      // Load banners
+      final bannersResponse = await Supabase.instance.client
           .from('banners')
           .select()
           .eq('is_active', true)
           .order('priority', ascending: true);
 
+      // Load categories
+      final categoriesResponse = await Supabase.instance.client
+          .from('categories')
+          .select()
+          .eq('is_home', true)
+          .order('created_at', ascending: true)
+          .limit(10);
+
       setState(() {
-        banners = (response as List).map((item) => Banner.fromJson(item)).toList();
+        banners = (bannersResponse as List).map((item) => Banner.fromJson(item)).toList();
+        categories = (categoriesResponse as List).map((item) => Category.fromJson(item)).toList();
         isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      debugPrint('Error loading banners: $e');
+      setState(() => isLoading = false);
+      debugPrint('Error loading data: $e');
     }
   }
 
@@ -186,16 +230,103 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildCategoriesSection() {
+    if (categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'الأقسام',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CategoriesPage(),
+                    ),
+                  );
+                },
+                child: const Text('المزيد'),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 110,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      ),
+                      child: ClipOval(
+                        child: Image.network(
+                          category.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.error),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      category.name,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: _loadBanners,
+              onRefresh: _loadData,
               child: ListView(
                 children: [
                   _buildBannerCarousel(),
+                  _buildCategoriesSection(),
+                  const SizedBox(height: 16),
                   const Center(
                     child: Text('الصفحة الرئيسية'),
                   ),
