@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
 import 'categories_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -251,12 +253,8 @@ class _HomePageState extends State<HomePage> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CategoriesPage(),
-                    ),
-                  );
+                  // Update the selected index in AppState to show Categories tab
+                  context.read<AppState>().updateSelectedIndex(1);
                 },
                 child: const Text('المزيد'),
               ),
