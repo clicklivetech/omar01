@@ -109,26 +109,30 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadData() async {
     try {
+      print('Started loading data...');
       setState(() => isLoading = true);
       
       // Load banners
+      print('Fetching banners...');
       final bannersResponse = await Supabase.instance.client
           .from('banners')
           .select()
           .eq('is_active', true)
           .order('priority', ascending: true);
-      print('Banners loaded: ${bannersResponse.length}');
+      print('Banners Response: $bannersResponse');
 
       // Load categories
+      print('Fetching categories...');
       final categoriesResponse = await Supabase.instance.client
           .from('categories')
           .select()
           .eq('is_home', true)
           .order('created_at', ascending: true)
           .limit(10);
-      print('Categories loaded: ${categoriesResponse.length}');
+      print('Categories Response: $categoriesResponse');
 
       // Load featured products
+      print('Fetching featured products...');
       final productsResponse = await Supabase.instance.client
           .from('products')
           .select()
@@ -136,9 +140,11 @@ class _HomePageState extends State<HomePage> {
           .eq('is_active', true)
           .order('created_at', ascending: false)
           .limit(10);
-      print('Featured products loaded: ${productsResponse.length}');
+      print('Featured Products Response: $productsResponse');
+      print('Featured Products Count: ${productsResponse.length}');
 
       // Load special offers
+      print('Fetching special offers...');
       final specialOffersResponse = await Supabase.instance.client
           .from('products')
           .select()
@@ -146,17 +152,43 @@ class _HomePageState extends State<HomePage> {
           .eq('is_active', true)
           .order('created_at', ascending: false)
           .limit(10);
-      print('Special offers loaded: ${specialOffersResponse.length}');
+      print('Special Offers Response: $specialOffersResponse');
+      print('Special Offers Count: ${specialOffersResponse.length}');
 
       setState(() {
-        banners = (bannersResponse as List).map((item) => Banner.fromJson(item)).toList();
-        categories = (categoriesResponse as List).map((item) => Category.fromJson(item)).toList();
-        featuredProducts = (productsResponse as List).map((item) => ProductModel.fromJson(item)).toList();
-        specialOffers = (specialOffersResponse as List).map((item) => ProductModel.fromJson(item)).toList();
-        isLoading = false;
+        try {
+          print('Processing banners...');
+          banners = (bannersResponse as List).map((item) => Banner.fromJson(item)).toList();
+          print('Processed Banners Count: ${banners.length}');
+          
+          print('Processing categories...');
+          categories = (categoriesResponse as List).map((item) => Category.fromJson(item)).toList();
+          print('Processed Categories Count: ${categories.length}');
+          
+          print('Processing featured products...');
+          featuredProducts = (productsResponse as List).map((item) {
+            print('Processing featured product: $item');
+            return ProductModel.fromJson(item);
+          }).toList();
+          print('Processed Featured Products Count: ${featuredProducts.length}');
+          
+          print('Processing special offers...');
+          specialOffers = (specialOffersResponse as List).map((item) {
+            print('Processing special offer: $item');
+            return ProductModel.fromJson(item);
+          }).toList();
+          print('Processed Special Offers Count: ${specialOffers.length}');
+          
+          isLoading = false;
+          print('Data loading completed successfully');
+        } catch (e) {
+          print('Error during data processing: $e');
+          rethrow;
+        }
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error loading data: $e');
+      print('Stack trace: $stackTrace');
       setState(() => isLoading = false);
     }
   }
