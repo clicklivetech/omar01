@@ -15,10 +15,15 @@ class SupabaseService {
     required String email,
     required String password,
   }) async {
-    return await supabase.auth.signInWithPassword(
-      email: email,
-      password: password,
-    );
+    try {
+      return await supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      print('خطأ في تسجيل الدخول: $e');
+      rethrow;
+    }
   }
 
   // إنشاء حساب جديد
@@ -27,11 +32,34 @@ class SupabaseService {
     required String password,
     required String name,
   }) async {
-    return await supabase.auth.signUp(
-      email: email,
-      password: password,
-      data: {'name': name},
-    );
+    try {
+      if (password.length < 6) {
+        throw 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+      }
+
+      // 1. إنشاء المستخدم في نظام المصادقة
+      final response = await supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+      
+      if (response.user == null) {
+        throw 'فشل في إنشاء الحساب';
+      }
+
+      // 2. إنشاء سجل في جدول profiles
+      await supabase.from('profiles').insert({
+        'id': response.user!.id,
+        'name': name,
+        'email': email,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      
+      return response;
+    } catch (e) {
+      print('خطأ في التسجيل: $e');
+      throw 'حدث خطأ أثناء إنشاء الحساب: $e';
+    }
   }
 
   // تسجيل الخروج
@@ -41,4 +69,19 @@ class SupabaseService {
 
   // الحصول على المستخدم الحالي
   static User? get currentUser => supabase.auth.currentUser;
+
+  // الحصول على معلومات المستخدم
+  static Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    try {
+      final response = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .single();
+      return response;
+    } catch (e) {
+      print('خطأ في جلب معلومات المستخدم: $e');
+      return null;
+    }
+  }
 }
