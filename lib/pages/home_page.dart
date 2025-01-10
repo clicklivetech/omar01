@@ -2,9 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'categories_page.dart';
 import '../widgets/product_card.dart';
+import 'package:shimmer/shimmer.dart';
+import '../models/product_model.dart';
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
 
 class Banner {
   final int id;
@@ -79,60 +87,19 @@ class Category {
   }
 }
 
-class Product {
-  final String id;
-  final String name;
-  final String description;
-  final double price;
-  final double? oldPrice;
-  final String imageUrl;
-  final bool isFeatured;
-  final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  Product({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.price,
-    this.oldPrice,
-    required this.imageUrl,
-    required this.isFeatured,
-    required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      price: (json['price'] as num).toDouble(),
-      oldPrice: json['old_price'] != null ? (json['old_price'] as num).toDouble() : null,
-      imageUrl: json['image_url'],
-      isFeatured: json['is_featured'] ?? false,
-      isActive: json['is_active'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
 class _HomePageState extends State<HomePage> {
   List<Banner> banners = [];
   List<Category> categories = [];
-  List<Product> featuredProducts = [];
-  List<Product> dailyDeals = [];
+  List<ProductModel> featuredProducts = [];
+  List<ProductModel> specialOffers = [];
   bool isLoading = true;
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -160,7 +127,7 @@ class _HomePageState extends State<HomePage> {
           .limit(10);
 
       // Load featured products
-      final featuredResponse = await Supabase.instance.client
+      final productsResponse = await Supabase.instance.client
           .from('products')
           .select()
           .eq('is_featured', true)
@@ -168,20 +135,20 @@ class _HomePageState extends State<HomePage> {
           .order('created_at', ascending: false)
           .limit(10);
 
-      // Load daily deals
-      final dealsResponse = await Supabase.instance.client
+      // Load special offers
+      final specialOffersResponse = await Supabase.instance.client
           .from('products')
           .select()
-          .not('old_price', 'is', null)
+          .not('discount_price', 'is', null)
           .eq('is_active', true)
           .order('created_at', ascending: false)
-          .limit(6);
+          .limit(10);
 
       setState(() {
         banners = (bannersResponse as List).map((item) => Banner.fromJson(item)).toList();
         categories = (categoriesResponse as List).map((item) => Category.fromJson(item)).toList();
-        featuredProducts = (featuredResponse as List).map((item) => Product.fromJson(item)).toList();
-        dailyDeals = (dealsResponse as List).map((item) => Product.fromJson(item)).toList();
+        featuredProducts = (productsResponse as List).map((item) => ProductModel.fromJson(item)).toList();
+        specialOffers = (specialOffersResponse as List).map((item) => ProductModel.fromJson(item)).toList();
         isLoading = false;
       });
     } catch (e) {
@@ -476,24 +443,24 @@ class _HomePageState extends State<HomePage> {
                             Row(
                               children: [
                                 Text(
-                                  '${product.price.toStringAsFixed(2)} جنيه',
-                                  style: const TextStyle(
-                                    fontSize: 16,
+                                  product.discountPrice != null
+                                      ? '${product.discountPrice} جنيه'
+                                      : '${product.price} جنيه',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.green,
+                                    fontSize: 16,
                                   ),
                                 ),
-                                if (product.oldPrice != null) ...[
-                                  const SizedBox(width: 8),
+                                if (product.discountPrice != null)
                                   Text(
-                                    '${product.oldPrice!.toStringAsFixed(2)} جنيه',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
+                                    '${product.price} جنيه',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
                                       decoration: TextDecoration.lineThrough,
+                                      fontSize: 12,
                                     ),
                                   ),
-                                ],
                               ],
                             ),
                           ],
@@ -510,8 +477,96 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildDailyDealsSection() {
-    if (dailyDeals.isEmpty) {
+  Widget _buildSearchBar() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Colors.grey,
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: searchController,
+        decoration: InputDecoration(
+          hintText: 'ابحث عن منتجات...',
+          prefixIcon: const Icon(Icons.search),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        onSubmitted: (value) {
+          if (value.isNotEmpty) {
+            // Implement search functionality
+            debugPrint('Searching for: $value');
+            // TODO: Navigate to search results page
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              height: 200,
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            Container(
+              height: 100,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: 5,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 3,
+              itemBuilder: (context, index) {
+                return Container(
+                  height: 100,
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSpecialOffersSection() {
+    if (specialOffers.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -522,152 +577,34 @@ class _HomePageState extends State<HomePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.local_offer,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'عروض اليوم',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              const Text(
+                'عروض خاصة',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               TextButton(
                 onPressed: () {
-                  // Navigate to daily deals page
+                  Navigator.pushNamed(context, '/special-offers');
                 },
-                child: const Text('المزيد'),
+                child: const Text('عرض الكل'),
               ),
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-              return MasonryGridView.count(
-                crossAxisCount: crossAxisCount,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: dailyDeals.length,
-                itemBuilder: (context, index) {
-                  final product = dailyDeals[index];
-                  final discount = ((product.oldPrice! - product.price) / product.oldPrice! * 100).round();
-                  
-                  return Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                              child: AspectRatio(
-                                aspectRatio: 1,
-                                child: CachedNetworkImage(
-                                  imageUrl: product.imageUrl,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: Colors.grey[200],
-                                    child: const Center(
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) => Container(
-                                    color: Colors.grey[200],
-                                    child: const Icon(Icons.error),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  'خصم $discount%',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product.name,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Text(
-                                    '${product.price.toStringAsFixed(2)} جنيه',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${product.oldPrice!.toStringAsFixed(2)} جنيه',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+        SizedBox(
+          height: 280,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: specialOffers.length,
+            itemBuilder: (context, index) {
+              final product = specialOffers[index];
+              return Container(
+                width: 200,
+                margin: const EdgeInsets.only(right: 16),
+                child: ProductCard(product: product),
               );
             },
           ),
@@ -679,23 +616,23 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: ListView(
-                children: [
-                  _buildBannerCarousel(),
-                  const SizedBox(height: 16),
-                  _buildCategoriesSection(),
-                  const SizedBox(height: 16),
-                  _buildFeaturedProductsSection(),
-                  const SizedBox(height: 16),
-                  _buildDailyDealsSection(),
-                  const SizedBox(height: 16),
-                ],
+      body: RefreshIndicator(
+        onRefresh: _loadData,
+        child: isLoading
+            ? _buildShimmerLoading()
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSearchBar(),
+                    _buildBannerCarousel(),
+                    _buildCategoriesSection(),
+                    _buildSpecialOffersSection(),
+                    _buildFeaturedProductsSection(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

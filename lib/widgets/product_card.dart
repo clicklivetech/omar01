@@ -130,13 +130,36 @@ class ProductCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       // السعر
-                      Text(
-                        '${product.price} جنيه',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+                      Row(
+                        children: [
+                          if (product.discountPrice != null) ...[
+                            Text(
+                              '${product.discountPrice} جنيه',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${product.price} جنيه',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                decoration: TextDecoration.lineThrough,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ] else
+                            Text(
+                              '${product.price} جنيه',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                        ],
                       ),
                       const Spacer(),
                       // زر إضافة/إزالة من السلة
