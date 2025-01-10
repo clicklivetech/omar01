@@ -47,13 +47,25 @@ class SupabaseService {
         throw 'فشل في إنشاء الحساب';
       }
 
-      // 2. إنشاء سجل في جدول profiles
-      await supabase.from('profiles').insert({
-        'id': response.user!.id,
-        'name': name,
-        'email': email,
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      print('تم إنشاء المستخدم بنجاح: ${response.user!.id}');
+
+      try {
+        // 2. إنشاء سجل في جدول profiles
+        final profileResponse = await supabase.from('profiles').insert({
+          'id': response.user!.id,
+          'name': name,
+          'email': email,
+          'phone': '',  // قيمة فارغة افتراضية
+          'address': '', // قيمة فارغة افتراضية
+        }).select();
+        
+        print('تم إنشاء الملف الشخصي بنجاح: $profileResponse');
+      } catch (profileError) {
+        print('خطأ في إنشاء الملف الشخصي: $profileError');
+        // حذف المستخدم إذا فشل إنشاء الملف الشخصي
+        await supabase.auth.admin.deleteUser(response.user!.id);
+        throw 'فشل في إنشاء الملف الشخصي: $profileError';
+      }
       
       return response;
     } catch (e) {
