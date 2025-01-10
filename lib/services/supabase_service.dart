@@ -41,6 +41,10 @@ class SupabaseService {
       final response = await supabase.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'name': name,
+          'email': email,
+        },
       );
       
       if (response.user == null) {
@@ -50,20 +54,21 @@ class SupabaseService {
       print('تم إنشاء المستخدم بنجاح: ${response.user!.id}');
 
       try {
-        // 2. إنشاء سجل في جدول profiles
-        final profileResponse = await supabase.from('profiles').insert({
-          'id': response.user!.id,
-          'name': name,
-          'email': email,
-          'phone': '',  // قيمة فارغة افتراضية
-          'address': '', // قيمة فارغة افتراضية
-        }).select();
+        // 2. إنشاء سجل في جدول profiles باستخدام upsert
+        await supabase
+          .from('profiles')
+          .upsert({
+            'id': response.user!.id,
+            'name': name,
+            'email': email,
+            'phone': '',
+            'address': '',
+          }, onConflict: 'id');
         
-        print('تم إنشاء الملف الشخصي بنجاح: $profileResponse');
+        print('تم إنشاء الملف الشخصي بنجاح');
       } catch (profileError) {
         print('خطأ في إنشاء الملف الشخصي: $profileError');
-        // حذف المستخدم إذا فشل إنشاء الملف الشخصي
-        await supabase.auth.admin.deleteUser(response.user!.id);
+        // لا نحاول حذف المستخدم لأننا لا نملك صلاحيات admin
         throw 'فشل في إنشاء الملف الشخصي: $profileError';
       }
       
