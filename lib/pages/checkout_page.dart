@@ -608,7 +608,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'سيتم توصيل طلبك إلى العنوان المحدد خلال 24-48 ساعة',
+                        'سيتم توصيل طلبك خلال 25-40 دقيقة من وقت التأكيد',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.access_time, color: Colors.grey[600], size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'وقت التأكيد: ${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                     ),
