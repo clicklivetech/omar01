@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'home_page.dart';
-import 'category_list_page.dart';
+import 'category_page.dart';
 import 'cart_page.dart';
 import 'favorites_page.dart';
 import 'profile_page.dart';
@@ -17,7 +17,7 @@ class MainLayout extends StatelessWidget {
 
     final pages = [
       const HomePage(),
-      CategoryListPage(),
+      const CategoryPage(),
       const CartPage(),
       const FavoritesPage(),
       const ProfilePage(),
