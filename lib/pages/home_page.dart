@@ -3,6 +3,8 @@ import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import '../models/banner_model.dart';
+import '../models/category_model.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,82 +13,9 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class BannerModel {
-  final int id;
-  final String title;
-  final String subtitle;
-  final String imageUrl;
-  final String backgroundColor;
-  final String actionUrl;
-  final bool isActive;
-  final int priority;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  BannerModel({
-    required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.imageUrl,
-    required this.backgroundColor,
-    required this.actionUrl,
-    required this.isActive,
-    required this.priority,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory BannerModel.fromJson(Map<String, dynamic> json) {
-    return BannerModel(
-      id: json['id'],
-      title: json['title'],
-      subtitle: json['subtitle'],
-      imageUrl: json['image_url'],
-      backgroundColor: json['background_color'],
-      actionUrl: json['action_url'],
-      isActive: json['is_active'],
-      priority: json['priority'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-    );
-  }
-}
-
-class Category {
-  final String id;
-  final String name;
-  final String? description;
-  final String imageUrl;
-  final bool isHome;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  Category({
-    required this.id,
-    required this.name,
-    this.description,
-    required this.imageUrl,
-    required this.isHome,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      imageUrl: json['image_url'],
-      isHome: json['is_home'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-    );
-  }
-}
-
 class _HomePageState extends State<HomePage> {
   List<BannerModel> banners = [];
-  List<Category> categories = [];
+  List<CategoryModel> categories = [];
   bool isLoading = true;
   TextEditingController searchController = TextEditingController();
 
@@ -98,31 +27,54 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadData() async {
     try {
+      debugPrint('Starting to load data...');
+      
+      // تحميل البانرات
       final bannersResponse = await Supabase.instance.client
           .from('banners')
           .select()
           .eq('is_active', true)
           .order('priority', ascending: true);
+      
+      debugPrint('Banners response: $bannersResponse');
 
+      // تحميل الأقسام
       final categoriesResponse = await Supabase.instance.client
           .from('categories')
           .select()
           .eq('is_active', true)
           .order('priority', ascending: true);
+      
+      debugPrint('Categories response: $categoriesResponse');
 
       if (mounted) {
         setState(() {
-          banners = (bannersResponse as List)
-              .map((banner) => BannerModel.fromJson(banner))
-              .toList();
-          categories = (categoriesResponse as List)
-              .map((category) => Category.fromJson(category))
-              .toList();
+          try {
+            banners = (bannersResponse as List)
+                .map((banner) => BannerModel.fromJson(banner))
+                .toList();
+            debugPrint('Processed ${banners.length} banners');
+          } catch (e) {
+            debugPrint('Error processing banners: $e');
+            banners = [];
+          }
+
+          try {
+            categories = (categoriesResponse as List)
+                .map((category) => CategoryModel.fromJson(category))
+                .toList();
+            debugPrint('Processed ${categories.length} categories');
+          } catch (e) {
+            debugPrint('Error processing categories: $e');
+            categories = [];
+          }
+          
           isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('Error loading data: $e');
+      debugPrint('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           isLoading = false;
@@ -143,10 +95,8 @@ class _HomePageState extends State<HomePage> {
         items: banners.map((banner) {
           return GestureDetector(
             onTap: () {
-              if (banner.actionUrl.isNotEmpty) {
-                debugPrint('Navigate to: ${banner.actionUrl}');
-                // TODO: تنفيذ التنقل إلى الرابط
-              }
+              debugPrint('Navigate to: ${banner.actionUrl}');
+              // TODO: تنفيذ التنقل إلى الرابط
             },
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -187,7 +137,7 @@ class _HomePageState extends State<HomePage> {
                               int.parse(
                                 banner.backgroundColor.replaceAll('#', '0xFF'),
                               ),
-                            ).withOpacity(0.1),
+                            ),
                             Color(
                               int.parse(
                                 banner.backgroundColor.replaceAll('#', '0xFF'),
@@ -222,21 +172,20 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                             ),
-                            if (banner.subtitle.isNotEmpty)
-                              Text(
-                                banner.subtitle,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  shadows: [
-                                    Shadow(
-                                      offset: Offset(1, 1),
-                                      blurRadius: 3,
-                                      color: Colors.black45,
-                                    ),
-                                  ],
-                                ),
+                            Text(
+                              banner.subtitle,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                shadows: [
+                                  Shadow(
+                                    offset: Offset(1, 1),
+                                    blurRadius: 3,
+                                    color: Colors.black45,
+                                  ),
+                                ],
                               ),
+                            ),
                           ],
                         ),
                       ),
