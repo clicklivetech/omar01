@@ -277,8 +277,8 @@ class AppState with ChangeNotifier {
         deliveryFee: deliveryFee,
         items: _cartItems.map((item) => CartItem(
           id: item.id,
-          quantity: item.quantity,
-          price: item.price,
+          quantity: item.quantity ?? 1,
+          price: item.finalPrice,
           name: item.name,
           imageUrl: item.imageUrl,
         )).toList(),

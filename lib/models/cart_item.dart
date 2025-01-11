@@ -7,7 +7,7 @@ class CartItem {
 
   const CartItem({
     required this.id,
-    required this.quantity,
+    this.quantity = 1,
     required this.price,
     required this.name,
     required this.imageUrl,
@@ -26,7 +26,7 @@ class CartItem {
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
       id: json['id'],
-      quantity: json['quantity'],
+      quantity: json['quantity'] ?? 1,
       price: json['price'],
       name: json['name'],
       imageUrl: json['imageUrl'],
