@@ -86,6 +86,7 @@ class Category {
 
 class _HomePageState extends State<HomePage> {
   List<BannerModel> banners = [];
+  List<Category> categories = [];
   bool isLoading = true;
   TextEditingController searchController = TextEditingController();
 
@@ -97,9 +98,14 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadData() async {
     try {
-      // تحميل البانرات
       final bannersResponse = await Supabase.instance.client
           .from('banners')
+          .select()
+          .eq('is_active', true)
+          .order('priority', ascending: true);
+
+      final categoriesResponse = await Supabase.instance.client
+          .from('categories')
           .select()
           .eq('is_active', true)
           .order('priority', ascending: true);
@@ -108,6 +114,9 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           banners = (bannersResponse as List)
               .map((banner) => BannerModel.fromJson(banner))
+              .toList();
+          categories = (categoriesResponse as List)
+              .map((category) => Category.fromJson(category))
               .toList();
           isLoading = false;
         });
@@ -254,8 +263,102 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCategoriesSection() {
-    // TODO: implement categories section
-    return const SizedBox.shrink();
+    if (categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'الأقسام',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/categories');
+                },
+                child: const Text('عرض الكل'),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 120,
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/category',
+                    arguments: category,
+                  );
+                },
+                child: Container(
+                  width: 100,
+                  margin: const EdgeInsets.only(right: 16),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: CachedNetworkImage(
+                            imageUrl: category.imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => const Icon(
+                              Icons.category_outlined,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        category.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildHeader() {
