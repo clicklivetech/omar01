@@ -564,9 +564,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (item.oldPrice != null) 
+                        if (item.discountPrice != null) 
                           Text(
-                            '${item.oldPrice} جنيه',
+                            '${item.discountPrice} جنيه',
                             style: TextStyle(
                               decoration: TextDecoration.lineThrough,
                               color: Colors.grey[500],

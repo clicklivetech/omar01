@@ -33,7 +33,7 @@ class AppState with ChangeNotifier {
 
   double get cartTotal => _cartItems.fold(
     0.0, 
-    (sum, item) => sum + (item.price * (item.quantity ?? 1))
+    (sum, item) => sum + (item.price * item.quantity)
   );
 
   int get cartItemsCount => _cartItems.length;  // Number of unique products in cart
@@ -279,7 +279,7 @@ class AppState with ChangeNotifier {
         deliveryFee: deliveryFee,
         items: cartItems.map((item) => CartItem(
           id: item.id,
-          quantity: item.quantity ?? 1,
+          quantity: item.quantity,
           price: item.price,
           name: item.name,
           imageUrl: item.imageUrl,

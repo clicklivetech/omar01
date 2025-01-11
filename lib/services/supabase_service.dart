@@ -339,7 +339,7 @@ class SupabaseService {
       final orderItems = items.map((item) => {
         'order_id': orderId,
         'product_id': item.id,
-        'quantity': item.quantity ?? 1,
+        'quantity': item.quantity,
         'price': item.price,
         'created_at': DateTime.now().toIso8601String(),
       }).toList();
