@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
 import '../services/cart_service.dart';
 import '../services/favorites_service.dart';
 
 class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key});
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const BottomNavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final currentIndex = context.watch<AppState>().currentPageIndex;
     final cartService = context.watch<CartService>();
     final favoritesService = context.watch<FavoritesService>();
 
     return BottomNavigationBar(
       currentIndex: currentIndex,
-      onTap: (index) {
-        context.read<AppState>().setCurrentPageIndex(index);
-      },
+      onTap: onTap,
       type: BottomNavigationBarType.fixed,
       selectedItemColor: Theme.of(context).colorScheme.primary,
       unselectedItemColor: Colors.grey,

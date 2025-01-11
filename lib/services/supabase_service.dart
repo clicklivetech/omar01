@@ -1,142 +1,26 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase/supabase.dart';
 import '../models/product_model.dart';
 import '../models/category_model.dart';
 import '../models/banner.dart' as app_banner;
 import '../services/logger_service.dart';
 
 class SupabaseService {
-  static final supabase = Supabase.instance.client;
-
-  static Future<void> initialize() async {
-    await Supabase.initialize(
-      url: 'https://vvjgjuvcbqnrzbjkcloa.supabase.co',
-      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2amdqdXZjYnFucnpiamtjbG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMxMjM0MjMsImV4cCI6MjA0ODY5OTQyM30.dAu01n_o4KOZ9L8W42U8Qd6XER4bH2SuXzwWZt09t7Q',
-    );
-  }
-
-  // تسجيل الدخول
-  static Future<AuthResponse> signIn({
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-
-      if (response.session == null) {
-        throw 'فشل في تسجيل الدخول';
-      }
-
-      return response;
-    } catch (e) {
-      LoggerService.error('Error signing in: $e');
-      rethrow;
-    }
-  }
-
-  // إنشاء حساب جديد
-  static Future<AuthResponse> signUp({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    try {
-      if (password.length < 6) {
-        throw 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
-      }
-
-      final response = await supabase.auth.signUp(
-        email: email,
-        password: password,
-      );
-
-      if (response.user == null) {
-        throw 'فشل في إنشاء الحساب';
-      }
-
-      try {
-        // إنشاء الملف الشخصي للمستخدم
-        await supabase.from('profiles').upsert({
-          'id': response.user!.id,
-          'name': name,
-          'email': email,
-          'phone': '',
-          'address': '',
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
-      } catch (profileError) {
-        LoggerService.error('Error creating profile: $profileError');
-        // لا نحاول حذف المستخدم لأننا لا نملك صلاحيات admin
-        throw 'فشل في إنشاء الملف الشخصي: $profileError';
-      }
-
-      return response;
-    } catch (e) {
-      LoggerService.error('Error signing up: $e');
-      rethrow;
-    }
-  }
-
-  // تسجيل الخروج
-  static Future<void> signOut() async {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      LoggerService.error('Error signing out: $e');
-      rethrow;
-    }
-  }
-
-  // الحصول على المستخدم الحالي
-  static User? get currentUser => supabase.auth.currentUser;
-
-  // الحصول على معلومات المستخدم
-  static Future<Map<String, dynamic>?> getUserProfile(String userId) async {
-    try {
-      final response = await supabase
-          .from('profiles')
-          .select()
-          .eq('id', userId)
-          .single();
-
-      if (response == null) {
-        LoggerService.error('User profile not found');
-        return null;
-      }
-
-      return response;
-    } catch (e) {
-      LoggerService.error('Error getting user profile: $e');
-      return null;
-    }
-  }
+  static final client = SupabaseClient(
+    'https://vvjgjuvcbqnrzbjkcloa.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ2amdqdXZjYnFucnpiamtjbG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMxMjM0MjMsImV4cCI6MjA0ODY5OTQyM30.dAu01n_o4KOZ9L8W42U8Qd6XER4bH2SuXzwWZt09t7Q',
+  );
 
   // الحصول على المنتجات المميزة
   static Future<List<ProductModel>> getFeaturedProducts() async {
     try {
-      final response = await supabase
+      final response = await client
           .from('products')
           .select()
           .eq('is_featured', true)
           .eq('is_active', true)
           .order('created_at');
 
-      if (response.status != 200) {
-        throw PostgrestException(
-          message: response.statusText ?? 'Unknown error',
-          code: response.status.toString(),
-        );
-      }
-
-      if (response.data is! List) {
-        LoggerService.error('Invalid response format for featured products');
-        return [];
-      }
-
-      return (response.data as List)
+      return (response as List)
           .map((item) => ProductModel.fromJson(item))
           .toList();
     } catch (e) {
@@ -148,26 +32,14 @@ class SupabaseService {
   // الحصول على العروض اليومية
   static Future<List<ProductModel>> getDailyDeals() async {
     try {
-      final response = await supabase
+      final response = await client
           .from('products')
           .select()
           .eq('daily_deals', true)
           .eq('is_active', true)
           .order('created_at');
 
-      if (response.status != 200) {
-        throw PostgrestException(
-          message: response.statusText ?? 'Unknown error',
-          code: response.status.toString(),
-        );
-      }
-
-      if (response.data is! List) {
-        LoggerService.error('Invalid response format for daily deals');
-        return [];
-      }
-
-      return (response.data as List)
+      return (response as List)
           .map((item) => ProductModel.fromJson(item))
           .toList();
     } catch (e) {
@@ -179,26 +51,14 @@ class SupabaseService {
   // الحصول على منتجات فئة معينة
   static Future<List<ProductModel>> getCategoryProducts(String categoryId) async {
     try {
-      final response = await supabase
+      final response = await client
           .from('products')
           .select()
           .eq('category_id', categoryId)
           .eq('is_active', true)
           .order('created_at');
 
-      if (response.status != 200) {
-        throw PostgrestException(
-          message: response.statusText ?? 'Unknown error',
-          code: response.status.toString(),
-        );
-      }
-
-      if (response.data is! List) {
-        LoggerService.error('Invalid response format for category products');
-        return [];
-      }
-
-      return (response.data as List)
+      return (response as List)
           .map((item) => ProductModel.fromJson(item))
           .toList();
     } catch (e) {
@@ -210,25 +70,14 @@ class SupabaseService {
   // البحث عن المنتجات
   static Future<List<ProductModel>> searchProducts(String query) async {
     try {
-      final response = await supabase
+      final response = await client
           .from('products')
           .select()
-          .or('name.ilike.%$query%,description.ilike.%$query%')
-          .order('name');
+          .textSearch('name', query)
+          .eq('is_active', true)
+          .order('created_at');
 
-      if (response.status != 200) {
-        throw PostgrestException(
-          message: response.statusText ?? 'Unknown error',
-          code: response.status.toString(),
-        );
-      }
-
-      if (response.data is! List) {
-        LoggerService.error('Invalid response format for search products');
-        return [];
-      }
-
-      return (response.data as List)
+      return (response as List)
           .map((item) => ProductModel.fromJson(item))
           .toList();
     } catch (e) {
@@ -237,58 +86,34 @@ class SupabaseService {
     }
   }
 
-  // الحصول على البنرات النشطة
+  // الحصول على البانرات النشطة
   static Future<List<app_banner.Banner>> getActiveBanners() async {
     try {
-      final response = await supabase
+      final response = await client
           .from('banners')
           .select()
           .eq('is_active', true)
-          .order('priority', ascending: true);
+          .order('created_at');
 
-      if (response.status != 200) {
-        throw PostgrestException(
-          message: response.statusText ?? 'Unknown error',
-          code: response.status.toString(),
-        );
-      }
-
-      if (response.data is! List) {
-        LoggerService.error('Invalid response format for active banners');
-        return [];
-      }
-
-      return (response.data as List)
+      return (response as List)
           .map((item) => app_banner.Banner.fromJson(item))
           .toList();
     } catch (e) {
-      LoggerService.error('Error getting active banners: $e');
+      LoggerService.error('Error getting banners: $e');
       return [];
     }
   }
 
-  // الحصول على الأقسام الرئيسية
+  // الحصول على الفئات الرئيسية
   static Future<List<CategoryModel>> getHomeCategories() async {
     try {
-      final response = await supabase
+      final response = await client
           .from('categories')
           .select()
-          .eq('is_home', true)
+          .eq('is_active', true)
           .order('created_at');
 
-      if (response.status != 200) {
-        throw PostgrestException(
-          message: response.statusText ?? 'Unknown error',
-          code: response.status.toString(),
-        );
-      }
-
-      if (response.data is! List) {
-        LoggerService.error('Invalid response format for home categories');
-        return [];
-      }
-
-      return (response.data as List)
+      return (response as List)
           .map((item) => CategoryModel.fromJson(item))
           .toList();
     } catch (e) {
@@ -297,50 +122,79 @@ class SupabaseService {
     }
   }
 
-  // الحصول على جميع الأقسام
+  // الحصول على جميع الفئات
   static Future<List<CategoryModel>> getAllCategories() async {
     try {
-      LoggerService.info('Fetching all categories...');
-      final response = await supabase
+      final response = await client
           .from('categories')
           .select()
+          .eq('is_active', true)
           .order('created_at');
 
-      LoggerService.info('Categories response: $response');
       return (response as List)
           .map((item) => CategoryModel.fromJson(item))
           .toList();
-    } catch (e, stackTrace) {
-      LoggerService.error('Error getting all categories: $e\n$stackTrace');
+    } catch (e) {
+      LoggerService.error('Error getting all categories: $e');
       return [];
     }
   }
 
-  // الحصول على قسم محدد
+  // الحصول على فئة معينة
   static Future<CategoryModel?> getCategoryById(String id) async {
     try {
-      final response = await supabase
+      final response = await client
           .from('categories')
           .select()
           .eq('id', id)
           .single();
 
-      if (response.status != 200) {
-        throw PostgrestException(
-          message: response.statusText ?? 'Unknown error',
-          code: response.status.toString(),
-        );
-      }
-
-      if (response.data is! Map) {
-        LoggerService.error('Invalid response format for category');
-        return null;
-      }
-
-      return CategoryModel.fromJson(response.data);
+      return CategoryModel.fromJson(response);
     } catch (e) {
       LoggerService.error('Error getting category: $e');
       return null;
+    }
+  }
+
+  // Authentication methods
+  Future<AuthResponse> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      return response;
+    } catch (e) {
+      LoggerService.error('Error signing in: $e');
+      rethrow;
+    }
+  }
+
+  Future<AuthResponse> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await client.auth.signUp(
+        email: email,
+        password: password,
+      );
+      return response;
+    } catch (e) {
+      LoggerService.error('Error signing up: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await client.auth.signOut();
+    } catch (e) {
+      LoggerService.error('Error signing out: $e');
+      rethrow;
     }
   }
 }

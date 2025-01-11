@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'services/supabase_service.dart';
 import 'services/cart_service.dart';
 import 'services/favorites_service.dart';
 import 'pages/main_layout.dart';
@@ -12,7 +11,6 @@ import 'models/category_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseService.initialize();
   
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
@@ -49,19 +47,19 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           fontFamily: 'Cairo',
         ),
-        locale: const Locale('ar', 'EG'),
-        supportedLocales: const [
-          Locale('ar', 'EG'),
-        ],
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        supportedLocales: const [
+          Locale('ar', ''),
+        ],
+        locale: const Locale('ar', ''),
         home: const MainLayout(),
         onGenerateRoute: (settings) {
-          if (settings.name == '/category-products') {
-            final category = settings.arguments as CategoryModel;
+          if (settings.name == '/category') {
+            final CategoryModel category = settings.arguments as CategoryModel;
             return MaterialPageRoute(
               builder: (context) => CategoryProductsPage(category: category),
             );

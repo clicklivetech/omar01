@@ -1,31 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'home_page.dart';
-import 'category_page.dart';
+import 'categories_page.dart';
 import 'cart_page.dart';
 import 'favorites_page.dart';
 import 'profile_page.dart';
 
-class MainLayout extends StatelessWidget {
+class MainLayout extends StatefulWidget {
   const MainLayout({super.key});
 
   @override
+  State<MainLayout> createState() => _MainLayoutState();
+}
+
+class _MainLayoutState extends State<MainLayout> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    const HomePage(),
+    const CategoriesPage(),
+    const CartPage(),
+    const FavoritesPage(),
+    const ProfilePage(),
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    final currentIndex = context.watch<AppState>().currentPageIndex;
-
-    final pages = [
-      const HomePage(),
-      const CategoryPage(),
-      const CartPage(),
-      const FavoritesPage(),
-      const ProfilePage(),
-    ];
-
     return Scaffold(
-      body: pages[currentIndex],
-      bottomNavigationBar: const BottomNavBar(),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+      ),
     );
   }
 }
