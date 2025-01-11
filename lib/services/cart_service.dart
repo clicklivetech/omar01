@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/cart_item.dart';
 import '../models/product_model.dart';
 
-class CartService {
+class CartService extends ChangeNotifier {
   static const String _cartKey = 'cart_items';
   final SharedPreferences _prefs;
 
@@ -20,8 +21,9 @@ class CartService {
 
   // حفظ عناصر السلة
   Future<void> saveCartItems(List<CartItem> items) async {
-    final String cartJson = json.encode(items.map((e) => e.toJson()).toList());
+    final String cartJson = json.encode(items.map((item) => item.toJson()).toList());
     await _prefs.setString(_cartKey, cartJson);
+    notifyListeners();
   }
 
   // إضافة منتج إلى السلة
@@ -29,7 +31,7 @@ class CartService {
     final items = getCartItems();
     final existingItemIndex = items.indexWhere((item) => item.product.id == product.id);
 
-    if (existingItemIndex >= 0) {
+    if (existingItemIndex != -1) {
       // تحديث الكمية إذا كان المنتج موجود بالفعل
       final existingItem = items[existingItemIndex];
       items[existingItemIndex] = existingItem.copyWith(
@@ -41,6 +43,7 @@ class CartService {
     }
 
     await saveCartItems(items);
+    notifyListeners();
   }
 
   // إزالة منتج من السلة
@@ -48,6 +51,7 @@ class CartService {
     final items = getCartItems();
     items.removeWhere((item) => item.product.id == productId);
     await saveCartItems(items);
+    notifyListeners();
   }
 
   // تحديث كمية منتج في السلة
@@ -60,9 +64,10 @@ class CartService {
     final items = getCartItems();
     final index = items.indexWhere((item) => item.product.id == productId);
     
-    if (index >= 0) {
+    if (index != -1) {
       items[index] = items[index].copyWith(quantity: quantity);
       await saveCartItems(items);
+      notifyListeners();
     }
   }
 
@@ -79,5 +84,6 @@ class CartService {
   // تفريغ السلة
   Future<void> clearCart() async {
     await _prefs.remove(_cartKey);
+    notifyListeners();
   }
 }

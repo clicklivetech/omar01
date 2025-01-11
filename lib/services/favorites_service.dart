@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/favorite_item.dart';
 import '../models/product_model.dart';
 
-class FavoritesService {
+class FavoritesService extends ChangeNotifier {
   static const String _favoritesKey = 'favorite_items';
   final SharedPreferences _prefs;
 
@@ -22,6 +23,7 @@ class FavoritesService {
   Future<void> saveFavorites(List<FavoriteItem> items) async {
     final String favoritesJson = json.encode(items.map((e) => e.toJson()).toList());
     await _prefs.setString(_favoritesKey, favoritesJson);
+    notifyListeners();
   }
 
   // إضافة منتج إلى المفضلة
@@ -30,6 +32,7 @@ class FavoritesService {
     if (!isProductFavorite(product.id)) {
       items.add(FavoriteItem(product: product));
       await saveFavorites(items);
+      notifyListeners();
     }
   }
 
@@ -38,6 +41,7 @@ class FavoritesService {
     final items = getFavorites();
     items.removeWhere((item) => item.product.id == productId);
     await saveFavorites(items);
+    notifyListeners();
   }
 
   // التحقق مما إذا كان المنتج في المفضلة
@@ -53,6 +57,7 @@ class FavoritesService {
   // تفريغ المفضلة
   Future<void> clearFavorites() async {
     await _prefs.remove(_favoritesKey);
+    notifyListeners();
   }
 
   // تبديل حالة المفضلة للمنتج

@@ -34,8 +34,12 @@ class MyApp extends StatelessWidget {
             return appState;
           }
         ),
-        Provider<CartService>(create: (context) => CartService(prefs)),
-        Provider<FavoritesService>(create: (context) => FavoritesService(prefs)),
+        ChangeNotifierProvider<CartService>(
+          create: (context) => CartService(prefs)
+        ),
+        ChangeNotifierProvider<FavoritesService>(
+          create: (context) => FavoritesService(prefs)
+        ),
       ],
       child: MaterialApp(
         title: 'عمر ماركت',
