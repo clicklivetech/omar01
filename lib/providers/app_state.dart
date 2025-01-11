@@ -33,7 +33,7 @@ class AppState with ChangeNotifier {
 
   double get cartTotal => _cartItems.fold(
     0, 
-    (sum, item) => sum + (item.finalPrice * (item.quantity ?? 1))
+    (sum, item) => sum + (item.finalPrice * item.quantity)
   );
 
   int get cartItemsCount => _cartItems.length;  // Number of unique products in cart
@@ -277,7 +277,7 @@ class AppState with ChangeNotifier {
         deliveryFee: deliveryFee,
         items: _cartItems.map((item) => CartItem(
           id: item.id,
-          quantity: item.quantity ?? 1,
+          quantity: item.quantity,
           price: item.finalPrice,
           name: item.name,
           imageUrl: item.imageUrl,
@@ -351,9 +351,15 @@ class AppState with ChangeNotifier {
         oldStatus: order.status.toString().split('.').last,
       );
 
-      // TODO: تحديث الطلب في Supabase
-      _orders[index] = updatedOrder;
-      notifyListeners();
+      try {
+        // تحديث الطلب في Supabase
+        await SupabaseService.updateOrderStatus(order.id, OrderStatus.cancelled);
+        _orders[index] = updatedOrder;
+        notifyListeners();
+      } catch (e) {
+        LoggerService.error('Error updating order status', e);
+        rethrow;
+      }
     }
   }
 
