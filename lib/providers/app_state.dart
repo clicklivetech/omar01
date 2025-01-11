@@ -31,7 +31,11 @@ class AppState with ChangeNotifier {
   List<ProductModel> get featuredProducts => _products.where((p) => p.isFeatured).toList();
   List<ProductModel> get onSaleProducts => _products.where((p) => p.hasDiscount).toList();
 
-  double get cartTotal => _cartItems.fold(0, (sum, item) => sum + item.finalPrice);
+  double get cartTotal => _cartItems.fold(
+    0, 
+    (sum, item) => sum + (item.finalPrice * (item.quantity ?? 1))
+  );
+
   int get cartItemsCount => _cartItems.length;  // Number of unique products in cart
 
   int get currentPageIndex => _currentPageIndex;
@@ -155,10 +159,18 @@ class AppState with ChangeNotifier {
   }
 
   void addToCart(ProductModel product) {
-    if (!_cartItems.contains(product)) {
-      _cartItems.add(product);
-      notifyListeners();
+    final existingIndex = _cartItems.indexWhere((item) => item.id == product.id);
+    if (existingIndex == -1) {
+      // إضافة المنتج مع تعيين الكمية الأولية إلى 1
+      _cartItems.add(product.copyWith(quantity: 1));
+    } else {
+      // زيادة الكمية إذا كان المنتج موجود بالفعل
+      final currentQuantity = _cartItems[existingIndex].quantity;
+      _cartItems[existingIndex] = _cartItems[existingIndex].copyWith(
+        quantity: currentQuantity + 1
+      );
     }
+    notifyListeners();
   }
 
   void removeFromCart(String productId) {
