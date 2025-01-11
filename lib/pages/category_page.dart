@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/category_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../services/supabase_service.dart';
+import './category_products_page.dart';
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
@@ -156,10 +157,13 @@ class _CategoryPageState extends State<CategoryPage> {
                               final category = _filteredCategories[index];
                               return InkWell(
                                 onTap: () {
-                                  Navigator.pushNamed(
+                                  Navigator.push(
                                     context,
-                                    '/category',
-                                    arguments: category,
+                                    MaterialPageRoute(
+                                      builder: (context) => CategoryProductsPage(
+                                        category: category,
+                                      ),
+                                    ),
                                   );
                                 },
                                 child: Container(
