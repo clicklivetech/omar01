@@ -17,12 +17,12 @@ class CartService extends ChangeNotifier {
 
     final List<dynamic> cartList = json.decode(cartJson);
     return cartList.map((item) => CartItemModel(
-      id: item['id'],
-      productId: item['product_id'],
-      quantity: item['quantity'],
-      price: item['price'].toDouble(),
-      name: item['name'],
-      imageUrl: item['image_url'],
+      id: item['id'] as String?,
+      productId: (item['productId'] ?? '') as String,
+      quantity: (item['quantity'] ?? 0) as int,
+      price: (item['price'] ?? 0.0).toDouble(),
+      name: (item['name'] ?? '') as String,
+      imageUrl: (item['imageUrl'] ?? '') as String,
     )).toList();
   }
 
@@ -129,5 +129,18 @@ class CartService extends ChangeNotifier {
   Future<void> clearCart() async {
     await _prefs.remove(_cartKey);
     notifyListeners();
+  }
+
+  // تهيئة السلة - تستخدم عند تغيير هيكل البيانات
+  Future<void> initializeCart() async {
+    try {
+      final cartJson = _prefs.getString(_cartKey);
+      if (cartJson != null) {
+        json.decode(cartJson);
+      }
+    } catch (e) {
+      // إذا كان هناك خطأ في قراءة البيانات، نقوم بمسح السلة
+      await clearCart();
+    }
   }
 }

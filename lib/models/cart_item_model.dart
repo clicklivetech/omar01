@@ -23,11 +23,11 @@ class CartItemModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'product_id': productId,
+      'productId': productId,
       'quantity': quantity,
       'price': price,
       'name': name,
-      'image_url': imageUrl,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -44,11 +44,11 @@ class CartItemModel {
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
     return CartItemModel(
       id: json['id'] as String?,
-      productId: json['product_id'] as String,
+      productId: json['productId'] as String,
       quantity: json['quantity'] as int,
       price: (json['price'] as num).toDouble(),
       name: json['name'] as String,
-      imageUrl: json['image_url'] as String,
+      imageUrl: json['imageUrl'] as String,
     );
   }
 

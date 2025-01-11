@@ -19,6 +19,11 @@ class CartPage extends StatelessWidget {
       ),
       body: Consumer<CartService>(
         builder: (context, cartService, child) {
+          // تهيئة السلة عند تحميل الصفحة
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            cartService.initializeCart();
+          });
+          
           final cartItems = cartService.getCartItems();
           
           return Column(
