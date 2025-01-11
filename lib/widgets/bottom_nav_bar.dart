@@ -35,8 +35,8 @@ class BottomNavBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: Badge(
-            label: Text(cartService.getItemCount().toString()),
-            isLabelVisible: cartService.getItemCount() > 0,
+            label: Text(cartService.itemCount.toString()),
+            isLabelVisible: cartService.itemCount > 0,
             child: const Icon(Icons.shopping_cart),
           ),
           label: 'السلة',

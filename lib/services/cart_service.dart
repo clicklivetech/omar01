@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/cart_item.dart';
+import '../models/cart_item_model.dart';
 import '../models/product_model.dart';
 
 class CartService extends ChangeNotifier {
@@ -11,16 +11,39 @@ class CartService extends ChangeNotifier {
   CartService(this._prefs);
 
   // الحصول على جميع عناصر السلة
-  List<CartItem> getCartItems() {
+  List<CartItemModel> getCartItems() {
     final String? cartJson = _prefs.getString(_cartKey);
     if (cartJson == null) return [];
 
     final List<dynamic> cartList = json.decode(cartJson);
-    return cartList.map((item) => CartItem.fromJson(item)).toList();
+    final List<CartItemModel> items = [];
+    
+    for (var item in cartList) {
+      // Get the product from your product service or database
+      // This is a placeholder - you need to implement the actual product retrieval
+      final productJson = item['product'] as Map<String, dynamic>;
+      final product = ProductModel.fromJson(productJson);
+      items.add(CartItemModel.fromJson(item, product));
+    }
+    
+    return items;
+  }
+
+  // حساب السعر الإجمالي للسلة
+  double get cartTotal {
+    return getCartItems().fold(0, (total, item) {
+      final price = item.product.discountPrice ?? item.product.price;
+      return total + (price * item.quantity);
+    });
+  }
+
+  // عدد العناصر في السلة
+  int get itemCount {
+    return getCartItems().fold(0, (total, item) => total + item.quantity);
   }
 
   // حفظ عناصر السلة
-  Future<void> saveCartItems(List<CartItem> items) async {
+  Future<void> saveCartItems(List<CartItemModel> items) async {
     final String cartJson = json.encode(items.map((item) => item.toJson()).toList());
     await _prefs.setString(_cartKey, cartJson);
     notifyListeners();
@@ -39,7 +62,7 @@ class CartService extends ChangeNotifier {
       );
     } else {
       // إضافة منتج جديد
-      items.add(CartItem(product: product, quantity: quantity));
+      items.add(CartItemModel(product: product, quantity: quantity));
     }
 
     await saveCartItems(items);
@@ -69,16 +92,6 @@ class CartService extends ChangeNotifier {
       await saveCartItems(items);
       notifyListeners();
     }
-  }
-
-  // حساب إجمالي السلة
-  double getCartTotal() {
-    return getCartItems().fold(0, (total, item) => total + item.totalPrice);
-  }
-
-  // الحصول على عدد العناصر في السلة
-  int getItemCount() {
-    return getCartItems().fold(0, (total, item) => total + item.quantity);
   }
 
   // تفريغ السلة

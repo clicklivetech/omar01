@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/cart_service.dart';
-import '../models/cart_item.dart';
+import '../models/cart_item_model.dart';
 import '../utils/notifications.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -17,7 +18,9 @@ class CartPage extends StatelessWidget {
       ),
       body: Consumer<CartService>(
         builder: (context, cartService, child) {
-          if (cartService.getCartItems().isEmpty) {
+          final cartItems = cartService.getCartItems();
+          
+          if (cartItems.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -44,17 +47,53 @@ class CartPage extends StatelessWidget {
             children: [
               Expanded(
                 child: ListView.builder(
-                  itemCount: cartService.getCartItems().length,
+                  itemCount: cartItems.length,
                   itemBuilder: (context, index) {
-                    final cartItem = cartService.getCartItems()[index];
+                    final cartItem = cartItems[index];
                     return CartItemCard(
                       cartItem: cartItem,
-                      onRemove: () {
-                        cartService.removeFromCart(cartItem.product.id);
-                        AppNotifications.showSuccess(
-                          context,
-                          'تم إزالة المنتج من السلة',
-                        );
+                      onUpdateQuantity: (newQuantity) async {
+                        try {
+                          if (newQuantity <= 0) {
+                            await cartService.removeFromCart(cartItem.product.id);
+                            if (context.mounted) {
+                              AppNotifications.showSuccess(
+                                context,
+                                'تم إزالة المنتج من السلة',
+                              );
+                            }
+                          } else {
+                            await cartService.updateQuantity(
+                              cartItem.product.id,
+                              newQuantity,
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppNotifications.showError(
+                              context,
+                              'حدث خطأ أثناء تحديث الكمية',
+                            );
+                          }
+                        }
+                      },
+                      onRemove: () async {
+                        try {
+                          await cartService.removeFromCart(cartItem.product.id);
+                          if (context.mounted) {
+                            AppNotifications.showSuccess(
+                              context,
+                              'تم إزالة المنتج من السلة',
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppNotifications.showError(
+                              context,
+                              'حدث خطأ أثناء إزالة المنتج',
+                            );
+                          }
+                        }
                       },
                     );
                   },
@@ -86,7 +125,7 @@ class CartPage extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${cartService.getCartTotal().toStringAsFixed(2)} ج.م',
+                          '${cartService.cartTotal.toStringAsFixed(2)} ج.م',
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -122,12 +161,14 @@ class CartPage extends StatelessWidget {
 }
 
 class CartItemCard extends StatelessWidget {
-  final CartItem cartItem;
+  final CartItemModel cartItem;
+  final Function(int) onUpdateQuantity;
   final VoidCallback onRemove;
 
   const CartItemCard({
     super.key,
     required this.cartItem,
+    required this.onUpdateQuantity,
     required this.onRemove,
   });
 
@@ -136,19 +177,33 @@ class CartItemCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
+            // صورة المنتج
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                cartItem.product.imageUrl,
+              child: CachedNetworkImage(
+                imageUrl: cartItem.product.imageUrl,
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: Icon(Icons.error_outline),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 16),
+            // معلومات المنتج
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,22 +214,93 @@ class CartItemCard extends StatelessWidget {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${cartItem.product.price.toStringAsFixed(2)} ج.م',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+                  if (cartItem.product.discountPrice != null) ...[
+                    Row(
+                      children: [
+                        Text(
+                          '${cartItem.product.discountPrice!.toStringAsFixed(2)} ج.م',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${cartItem.product.price.toStringAsFixed(2)} ج.م',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            decoration: TextDecoration.lineThrough,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
+                  ] else
+                    Text(
+                      '${cartItem.product.price.toStringAsFixed(2)} ج.م',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  // عداد الكمية
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 16),
+                              onPressed: () => onUpdateQuantity(cartItem.quantity - 1),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                            ),
+                            Container(
+                              constraints: const BoxConstraints(minWidth: 32),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${cartItem.quantity}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 16),
+                              onPressed: () => onUpdateQuantity(cartItem.quantity + 1),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      // زر الحذف
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline),
+                        color: Colors.red,
+                        onPressed: onRemove,
+                        tooltip: 'إزالة من السلة',
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              color: Colors.red,
-              onPressed: onRemove,
             ),
           ],
         ),
