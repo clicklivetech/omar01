@@ -32,8 +32,8 @@ class AppState with ChangeNotifier {
   List<ProductModel> get onSaleProducts => _products.where((p) => p.hasDiscount).toList();
 
   double get cartTotal => _cartItems.fold(
-    0, 
-    (sum, item) => sum + (item.finalPrice * item.quantity)
+    0.0, 
+    (sum, item) => sum + (item.price * (item.quantity ?? 1))
   );
 
   int get cartItemsCount => _cartItems.length;  // Number of unique products in cart
@@ -263,8 +263,10 @@ class AppState with ChangeNotifier {
     required String phone,
     required double deliveryFee,
   }) async {
-    if (_cartItems.isEmpty) throw Exception('السلة فارغة');
     if (_currentUserId == null) throw Exception('يجب تسجيل الدخول أولاً');
+
+    final cartItems = _cartItems;
+    if (cartItems.isEmpty) throw Exception('السلة فارغة');
 
     final totalAmount = cartTotal + deliveryFee;
     
@@ -275,10 +277,10 @@ class AppState with ChangeNotifier {
         phone: phone,
         totalAmount: totalAmount,
         deliveryFee: deliveryFee,
-        items: _cartItems.map((item) => CartItem(
+        items: cartItems.map((item) => CartItem(
           id: item.id,
-          quantity: item.quantity,
-          price: item.finalPrice,
+          quantity: item.quantity ?? 1,
+          price: item.price,
           name: item.name,
           imageUrl: item.imageUrl,
         )).toList(),
@@ -288,8 +290,7 @@ class AppState with ChangeNotifier {
       await fetchUserOrders();
       
       // مسح السلة بعد نجاح الطلب
-      _cartItems.clear();
-      notifyListeners();
+      clearCart();
       
       return orderId;
     } catch (e) {
