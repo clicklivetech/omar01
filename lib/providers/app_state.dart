@@ -218,9 +218,9 @@ class AppState with ChangeNotifier {
     return _favoriteItems.contains(product);
   }
 
-  int getCartItemQuantity(String itemId) {
+  int getCartItemQuantity(String productId) {
     final item = _cartItems.firstWhere(
-      (item) => item.id == itemId,
+      (item) => item.productId == productId,
       orElse: () => CartItemModel(
         productId: '',
         quantity: 0,

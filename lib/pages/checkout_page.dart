@@ -546,7 +546,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'الكمية: ${appState.getCartItemQuantity(item.id)}',
+                            'الكمية: ${item.quantity}',
                             style: const TextStyle(
                               color: Color(0xFF757575),
                               fontSize: 13,
@@ -559,7 +559,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${(item.price * appState.getCartItemQuantity(item.id)).toStringAsFixed(2)} جنيه',
+                          '${(item.price * item.quantity).toStringAsFixed(2)} جنيه',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
