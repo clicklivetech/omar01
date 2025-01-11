@@ -37,23 +37,23 @@ class ProductModel {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      price: double.parse(json['price'].toString()),
+      id: json['id'].toString(),  // تحويل UUID إلى String
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      price: double.parse((json['price'] ?? 0).toString()),
       discountPrice: json['discount_price'] != null 
           ? double.parse(json['discount_price'].toString())
           : null,
-      categoryId: json['category_id'] as String,
-      stockQuantity: json['stock_quantity'] as int,
-      imageUrl: json['image_url'] as String,
-      isFeatured: json['is_featured'] as bool,
-      isActive: json['is_active'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-      unit: json['unit'] as String,
-      searchVector: json['search_vector'] as String?,
-      dailyDeals: json['daily_deals'] as bool,
+      categoryId: json['category_id'].toString(),  // تحويل UUID إلى String
+      stockQuantity: (json['stock_quantity'] ?? 0) as int,
+      imageUrl: json['image_url'] ?? '',
+      isFeatured: json['is_featured'] ?? false,
+      isActive: json['is_active'] ?? true,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      unit: json['unit'] ?? '',
+      searchVector: json['search_vector'],
+      dailyDeals: json['daily_deals'] ?? false,
       rating: json['rating'] != null ? double.parse(json['rating'].toString()) : 0.0,
     );
   }

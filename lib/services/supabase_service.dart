@@ -51,19 +51,23 @@ class SupabaseService {
   // الحصول على منتجات فئة معينة
   static Future<List<ProductModel>> getCategoryProducts(String categoryId) async {
     try {
+      LoggerService.info('Fetching products for category: $categoryId');
+      
       final response = await client
           .from('products')
-          .select()
+          .select('id, name, description, price, discount_price, category_id, stock_quantity, image_url, is_featured, is_active, created_at, updated_at, unit, search_vector, daily_deals, rating')
           .eq('category_id', categoryId)
           .eq('is_active', true)
           .order('created_at');
 
+      LoggerService.info('Products response received: ${response.length} items');
+
       return (response as List)
           .map((item) => ProductModel.fromJson(item))
           .toList();
-    } catch (e) {
-      LoggerService.error('Error getting category products: $e');
-      return [];
+    } catch (e, stackTrace) {
+      LoggerService.error('Error getting category products: $e\n$stackTrace');
+      rethrow;
     }
   }
 
