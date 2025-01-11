@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
+import '../services/favorites_service.dart';
 import '../widgets/product_card.dart';
 
 class FavoritesPage extends StatelessWidget {
@@ -14,9 +14,9 @@ class FavoritesPage extends StatelessWidget {
         backgroundColor: const Color(0xFF6E58A8),
         foregroundColor: Colors.white,
       ),
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
-          final favorites = appState.favoriteItems;
+      body: Consumer<FavoritesService>(
+        builder: (context, favoritesService, child) {
+          final favorites = favoritesService.getFavorites();
 
           return favorites.isEmpty
               ? const Center(
@@ -35,8 +35,9 @@ class FavoritesPage extends StatelessWidget {
                   ),
                   itemCount: favorites.length,
                   itemBuilder: (context, index) {
+                    final product = favorites[index].product;
                     return ProductCard(
-                      product: favorites[index],
+                      product: product,
                       width: double.infinity,
                       height: double.infinity,
                     );

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
-import '../models/cart_item_model.dart';
 import '../services/cart_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/notifications.dart';
@@ -25,13 +24,10 @@ class ProductCard extends StatelessWidget {
     final cartService = context.watch<CartService>();
     final favoritesService = context.watch<FavoritesService>();
     final isInFavorites = favoritesService.getFavorites().any((item) => item.product.id == product.id);
-    final cartItem = cartService.getCartItems().firstWhere(
-          (item) => item.product.id == product.id,
-          orElse: () => CartItemModel(product: product, quantity: 0),
-        );
+    final quantity = cartService.getItemQuantity(product.id);
     final screenWidth = MediaQuery.of(context).size.width;
     final cardWidth = width ?? (screenWidth > 600 ? 200 : screenWidth * 0.45);
-    final cardHeight = height ?? (cardWidth * 1.5);
+    final cardHeight = height ?? (cardWidth * 1.8);
 
     return SizedBox(
       width: cardWidth,
@@ -56,7 +52,7 @@ class ProductCard extends StatelessWidget {
             children: [
               // صورة المنتج مع زر المفضلة
               Expanded(
-                flex: 3,
+                flex: 5,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -137,7 +133,7 @@ class ProductCard extends StatelessWidget {
               ),
               // معلومات المنتج
               Expanded(
-                flex: 2,
+                flex: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
@@ -204,15 +200,15 @@ class ProductCard extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.remove, size: 16),
-                                    onPressed: cartItem.quantity > 0
+                                    onPressed: quantity > 0
                                         ? () async {
                                             try {
-                                              if (cartItem.quantity == 1) {
+                                              if (quantity == 1) {
                                                 await cartService.removeFromCart(product.id);
                                               } else {
                                                 await cartService.updateQuantity(
                                                   product.id,
-                                                  cartItem.quantity - 1,
+                                                  quantity - 1,
                                                 );
                                               }
                                             } catch (e) {
@@ -229,7 +225,7 @@ class ProductCard extends StatelessWidget {
                                     constraints: const BoxConstraints(),
                                   ),
                                   Text(
-                                    '${cartItem.quantity}',
+                                    '$quantity',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
@@ -239,12 +235,12 @@ class ProductCard extends StatelessWidget {
                                     icon: const Icon(Icons.add, size: 16),
                                     onPressed: () async {
                                       try {
-                                        if (cartItem.quantity == 0) {
+                                        if (quantity == 0) {
                                           await cartService.addToCart(product);
                                         } else {
                                           await cartService.updateQuantity(
                                             product.id,
-                                            cartItem.quantity + 1,
+                                            quantity + 1,
                                           );
                                         }
                                       } catch (e) {
@@ -280,7 +276,7 @@ class ProductCard extends StatelessWidget {
                               ),
                               onPressed: () async {
                                 try {
-                                  if (cartItem.quantity == 0) {
+                                  if (quantity == 0) {
                                     await cartService.addToCart(product);
                                     if (context.mounted) {
                                       AppNotifications.showSuccess(

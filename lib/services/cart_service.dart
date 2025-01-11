@@ -42,6 +42,33 @@ class CartService extends ChangeNotifier {
     return getCartItems().fold(0, (total, item) => total + item.quantity);
   }
 
+  // الحصول على كمية منتج معين في السلة
+  int getItemQuantity(String productId) {
+    final items = getCartItems();
+    final item = items.firstWhere(
+      (item) => item.product.id == productId,
+      orElse: () => CartItemModel(
+        product: ProductModel(
+          id: productId,
+          name: '',
+          description: '',
+          price: 0,
+          categoryId: '',
+          stockQuantity: 0,
+          imageUrl: '',
+          isFeatured: false,
+          isActive: true,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          unit: 'piece',
+          dailyDeals: false,
+        ), 
+        quantity: 0
+      ),
+    );
+    return item.quantity;
+  }
+
   // حفظ عناصر السلة
   Future<void> saveCartItems(List<CartItemModel> items) async {
     final String cartJson = json.encode(items.map((item) => item.toJson()).toList());
