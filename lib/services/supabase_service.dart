@@ -125,18 +125,21 @@ class SupabaseService {
   // الحصول على جميع الفئات
   static Future<List<CategoryModel>> getAllCategories() async {
     try {
+      LoggerService.info('Fetching categories from Supabase...');
+      
       final response = await client
           .from('categories')
-          .select()
-          .eq('is_active', true)
+          .select('id, name, description, image_url, is_home, created_at, updated_at')
           .order('created_at');
+
+      LoggerService.info('Categories response received: ${response.length} items');
 
       return (response as List)
           .map((item) => CategoryModel.fromJson(item))
           .toList();
-    } catch (e) {
-      LoggerService.error('Error getting all categories: $e');
-      return [];
+    } catch (e, stackTrace) {
+      LoggerService.error('Error getting all categories: $e\n$stackTrace');
+      rethrow;
     }
   }
 

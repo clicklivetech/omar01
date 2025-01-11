@@ -19,13 +19,13 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      description: json['description'] as String?,
-      imageUrl: json['image_url'] as String,
-      isHome: json['is_home'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      id: json['id'].toString(),  // تحويل UUID إلى String
+      name: json['name'] ?? '',
+      description: json['description'],
+      imageUrl: json['image_url'] ?? '',
+      isHome: json['is_home'] ?? false,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
     );
   }
 
