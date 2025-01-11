@@ -16,6 +16,20 @@ class ProductDetailsPage extends StatelessWidget {
         title: Text(product.name),
         backgroundColor: const Color(0xFF6E58A8),
         foregroundColor: Colors.white,
+        actions: [
+          Consumer<AppState>(
+            builder: (context, appState, child) {
+              final isFavorite = appState.isFavorite(product);
+              return IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: Colors.white,
+                ),
+                onPressed: () => appState.toggleFavorite(product),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -131,46 +145,75 @@ class ProductDetailsPage extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, -3),
+      bottomNavigationBar: Consumer<AppState>(
+        builder: (context, appState, child) {
+          final quantity = appState.getCartItemQuantity(product.id);
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.3),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, -3),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // زر المفضلة
-            Consumer<AppState>(
-              builder: (context, appState, child) {
-                final isFavorite = appState.isFavorite(product);
-                return IconButton(
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: const Color(0xFF6E58A8),
+            child: Row(
+              children: [
+                // عداد الكمية
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  onPressed: () => appState.toggleFavorite(product),
-                );
-              },
-            ),
-            const SizedBox(width: 16),
-            // زر إضافة إلى السلة
-            Expanded(
-              child: Consumer<AppState>(
-                builder: (context, appState, child) {
-                  return ElevatedButton(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove, size: 20),
+                        onPressed: quantity > 0
+                            ? () {
+                                if (quantity == 1) {
+                                  appState.removeFromCart(product.id);
+                                } else {
+                                  appState.updateCartItemQuantity(product.id, quantity - 1);
+                                }
+                              }
+                            : null,
+                      ),
+                      Text(
+                        '$quantity',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add, size: 20),
+                        onPressed: () {
+                          if (quantity == 0) {
+                            appState.addToCart(product);
+                          } else {
+                            appState.updateCartItemQuantity(product.id, quantity + 1);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // زر إضافة إلى السلة
+                Expanded(
+                  child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6E58A8),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    onPressed: () {
+                    onPressed: quantity == 0 ? () {
                       appState.addToCart(product);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -178,17 +221,17 @@ class ProductDetailsPage extends StatelessWidget {
                           duration: Duration(seconds: 2),
                         ),
                       );
-                    },
-                    child: const Text(
-                      'أضف إلى السلة',
-                      style: TextStyle(fontSize: 18),
+                    } : null,
+                    child: Text(
+                      quantity == 0 ? 'أضف إلى السلة' : 'في السلة',
+                      style: const TextStyle(fontSize: 18),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -31,35 +31,52 @@ class _CategoryPageState extends State<CategoryPage> {
   }
 
   void _filterCategories(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _filteredCategories = List.from(_categories);
-      });
-      return;
-    }
-
-    final normalizedQuery = _normalizeArabicText(query);
     setState(() {
-      _filteredCategories = _categories.where((category) {
-        final normalizedName = _normalizeArabicText(category.name);
-        return normalizedName.contains(normalizedQuery);
-      }).toList();
+      if (query.isEmpty) {
+        _filteredCategories = List.from(_categories);
+      } else {
+        final normalizedQuery = _normalizeArabicText(query);
+        _filteredCategories = _categories.where((category) {
+          final normalizedName = _normalizeArabicText(category.name);
+          final normalizedDescription = _normalizeArabicText(category.description ?? '');
+          
+          // البحث في الاسم والوصف
+          return normalizedName.contains(normalizedQuery) || 
+                 normalizedDescription.contains(normalizedQuery);
+        }).toList();
+      }
     });
   }
 
   String _normalizeArabicText(String input) {
+    // قائمة الأحرف العربية المتشابهة
     const arabic = {
       'أ': 'ا',
       'إ': 'ا',
       'آ': 'ا',
       'ة': 'ه',
       'ى': 'ي',
+      'ئ': 'ي',
+      'ؤ': 'و',
+      'ء': '',
+      'َ': '', // فتحة
+      'ُ': '', // ضمة
+      'ِ': '', // كسرة
+      'ّ': '', // شدة
+      'ْ': '', // سكون
+      'ً': '', // تنوين فتح
+      'ٌ': '', // تنوين ضم
+      'ٍ': '', // تنوين كسر
     };
 
-    String normalized = input.toLowerCase();
+    String normalized = input.trim().toLowerCase();
     arabic.forEach((key, value) {
       normalized = normalized.replaceAll(key, value);
     });
+    
+    // إزالة المسافات الزائدة
+    normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
+    
     return normalized;
   }
 
@@ -103,8 +120,17 @@ class _CategoryPageState extends State<CategoryPage> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'البحث عن فئة...',
+                hintText: 'ابحث عن فئة...',
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _filterCategories('');
+                        },
+                      )
+                    : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -112,7 +138,10 @@ class _CategoryPageState extends State<CategoryPage> {
                   horizontal: 16,
                   vertical: 12,
                 ),
+                filled: true,
+                fillColor: Colors.grey[50],
               ),
+              textInputAction: TextInputAction.search,
               onChanged: _filterCategories,
             ),
           ),
