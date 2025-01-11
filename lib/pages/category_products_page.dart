@@ -30,15 +30,29 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
   Future<void> _loadProducts() async {
     setState(() => isLoading = true);
     try {
-      final categoryProducts =
-          await SupabaseService.getCategoryProducts(widget.category.id);
+      LoggerService.info('Loading products for category: ${widget.category.id} (${widget.category.name})');
+      
+      final categoryProducts = await SupabaseService.getCategoryProducts(widget.category.id);
+      
+      LoggerService.info('Loaded ${categoryProducts.length} products for category ${widget.category.name}');
+      
       setState(() {
         products = categoryProducts;
         isLoading = false;
       });
-    } catch (e) {
-      LoggerService.error('Error loading products', e);
+    } catch (e, stackTrace) {
+      LoggerService.error('Error loading products for category ${widget.category.name}', e, stackTrace);
       setState(() => isLoading = false);
+      
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ أثناء تحميل المنتجات: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

@@ -53,9 +53,10 @@ class SupabaseService {
     try {
       LoggerService.info('Fetching products for category: $categoryId');
       
+      // تحويل معرف القسم إلى UUID
       final response = await client
           .from('products')
-          .select('id, name, description, price, discount_price, category_id, stock_quantity, image_url, is_featured, is_active, created_at, updated_at, unit, search_vector, daily_deals, rating')
+          .select()
           .eq('category_id', categoryId)
           .eq('is_active', true)
           .order('created_at');

@@ -37,14 +37,14 @@ class ProductModel {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
-      id: json['id'].toString(),  // تحويل UUID إلى String
+      id: json['id'].toString(),  
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       price: double.parse((json['price'] ?? 0).toString()),
       discountPrice: json['discount_price'] != null 
           ? double.parse(json['discount_price'].toString())
           : null,
-      categoryId: json['category_id'].toString(),  // تحويل UUID إلى String
+      categoryId: json['category_id']?.toString() ?? '',  
       stockQuantity: (json['stock_quantity'] ?? 0) as int,
       imageUrl: json['image_url'] ?? '',
       isFeatured: json['is_featured'] ?? false,
