@@ -54,6 +54,10 @@ android {
             signingConfig signingConfigs.debug
         }
     }
+
+    configurations.all {
+        exclude group: 'com.aboutyou.dart_packages', module: 'sign_in_with_apple'
+    }
 }
 
 flutter {
@@ -61,5 +65,6 @@ flutter {
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.multidex:multidex:2.0.1'
 }
