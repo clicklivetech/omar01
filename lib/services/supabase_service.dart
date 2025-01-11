@@ -308,7 +308,7 @@ class SupabaseService {
 
   // إنشاء طلب جديد
   static Future<String> createOrder({
-    required String userId,
+    String? userId,  
     required String shippingAddress,
     required String phone,
     required double totalAmount,
@@ -320,13 +320,12 @@ class SupabaseService {
       final orderResponse = await client
           .from('orders')
           .insert({
-            'user_id': userId,
-            'status': OrderStatus.pending.name,
-            'total_amount': totalAmount,
+            'user_id': userId,  
             'shipping_address': shippingAddress,
             'phone': phone,
+            'total_amount': totalAmount,
             'delivery_fee': deliveryFee,
-            'payment_method': PaymentMethod.cash.name,
+            'status': OrderStatus.pending.name,
             'created_at': DateTime.now().toIso8601String(),
             'updated_at': DateTime.now().toIso8601String(),
           })
@@ -351,7 +350,7 @@ class SupabaseService {
       LoggerService.info('Order created successfully: $orderId');
       return orderId;
     } catch (e, stackTrace) {
-      LoggerService.error('Error creating order', e, stackTrace);
+      LoggerService.error('Error creating order in Supabase: $e\n$stackTrace');
       rethrow;
     }
   }

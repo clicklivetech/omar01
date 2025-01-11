@@ -23,6 +23,7 @@ class AppState with ChangeNotifier {
 
   AppState() {
     _loadAddresses();
+    _loadCart();
   }
 
   List<ProductModel> get cartItems => _cartItems;
@@ -63,6 +64,33 @@ class AppState with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final addressesJson = _addresses.map((addr) => jsonEncode(addr.toJson())).toList();
     await prefs.setStringList('addresses', addressesJson);
+  }
+
+  Future<void> _loadCart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cartJson = prefs.getString('cart_items');
+      if (cartJson != null) {
+        final cartList = jsonDecode(cartJson) as List;
+        _cartItems.clear();
+        _cartItems.addAll(
+          cartList.map((item) => ProductModel.fromJson(item as Map<String, dynamic>)).toList()
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      LoggerService.error('Error loading cart: $e');
+    }
+  }
+
+  Future<void> _saveCart() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cartJson = jsonEncode(_cartItems.map((item) => item.toJson()).toList());
+      await prefs.setString('cart_items', cartJson);
+    } catch (e) {
+      LoggerService.error('Error saving cart: $e');
+    }
   }
 
   Future<void> addAddress({
@@ -161,20 +189,20 @@ class AppState with ChangeNotifier {
   void addToCart(ProductModel product) {
     final existingIndex = _cartItems.indexWhere((item) => item.id == product.id);
     if (existingIndex == -1) {
-      // إضافة المنتج مع تعيين الكمية الأولية إلى 1
       _cartItems.add(product.copyWith(quantity: 1));
     } else {
-      // زيادة الكمية إذا كان المنتج موجود بالفعل
       final currentQuantity = _cartItems[existingIndex].quantity;
       _cartItems[existingIndex] = _cartItems[existingIndex].copyWith(
         quantity: currentQuantity + 1
       );
     }
+    _saveCart();  // Save cart after modification
     notifyListeners();
   }
 
   void removeFromCart(String productId) {
     _cartItems.removeWhere((item) => item.id == productId);
+    _saveCart();  // Save cart after modification
     notifyListeners();
   }
 
@@ -218,12 +246,14 @@ class AppState with ChangeNotifier {
     final index = _cartItems.indexWhere((item) => item.id == productId);
     if (index != -1) {
       _cartItems[index] = _cartItems[index].copyWith(quantity: newQuantity);
+      _saveCart();  // Save cart after modification
       notifyListeners();
     }
   }
 
   void clearCart() {
     _cartItems.clear();
+    _saveCart();  // Save cart after modification
     notifyListeners();
   }
 
@@ -263,8 +293,6 @@ class AppState with ChangeNotifier {
     required String phone,
     required double deliveryFee,
   }) async {
-    if (_currentUserId == null) throw Exception('يجب تسجيل الدخول أولاً');
-
     final cartItems = _cartItems;
     if (cartItems.isEmpty) throw Exception('السلة فارغة');
 
@@ -272,7 +300,7 @@ class AppState with ChangeNotifier {
     
     try {
       final orderId = await SupabaseService.createOrder(
-        userId: _currentUserId!,
+        userId: _currentUserId,  // يمكن أن يكون null
         shippingAddress: shippingAddress,
         phone: phone,
         totalAmount: totalAmount,
@@ -286,15 +314,17 @@ class AppState with ChangeNotifier {
         )).toList(),
       );
 
-      // تحديث قائمة الطلبات
-      await fetchUserOrders();
+      // تحديث قائمة الطلبات فقط إذا كان المستخدم مسجل دخول
+      if (_currentUserId != null) {
+        await fetchUserOrders();
+      }
       
       // مسح السلة بعد نجاح الطلب
       clearCart();
       
       return orderId;
-    } catch (e) {
-      LoggerService.error('Error creating order in AppState', e);
+    } catch (e, stackTrace) {
+      LoggerService.error('Error creating order: $e\n$stackTrace');
       rethrow;
     }
   }
