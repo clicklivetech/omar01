@@ -4,6 +4,7 @@ import '../models/category_model.dart';
 import '../models/banner.dart' as app_banner;
 import '../services/logger_service.dart';
 import '../models/order_model.dart';
+import '../models/cart_item.dart';
 import '../enums/order_status.dart';
 
 class SupabaseService {
@@ -82,15 +83,13 @@ class SupabaseService {
       final response = await client
           .from('products')
           .select()
-          .or('name.ilike.%${query}%,description.ilike.%${query}%')
+          .or('name.ilike.%$query%,description.ilike.%$query%')
           .eq('is_active', true)
           .order('created_at');
 
-      LoggerService.info('Found ${(response as List).length} products matching query: $query');
+      LoggerService.info('Found ${response.length} products matching query: $query');
       
-      return (response as List)
-          .map((item) => ProductModel.fromJson(item))
-          .toList();
+      return (response as List).map((item) => ProductModel.fromJson(item)).toList();
     } catch (e, stackTrace) {
       LoggerService.error('Error searching products: $e', e, stackTrace);
       return [];
@@ -269,12 +268,12 @@ class SupabaseService {
       // تحويل البيانات إلى نموذج OrderModel
       final List<OrderItem> items = (itemsResponse as List).map((item) {
         return OrderItem(
-          id: item['id'],
-          orderId: item['order_id'],
-          productId: item['product_id'],
-          quantity: item['quantity'],
-          price: item['price'].toDouble(),
-          createdAt: DateTime.parse(item['created_at']),
+          id: item['id'] as String,
+          orderId: item['order_id'] as String,
+          productId: item['product_id'] as String,
+          quantity: item['quantity'] as int,
+          price: (item['price'] as num).toDouble(),
+          createdAt: DateTime.parse(item['created_at'] as String),
         );
       }).toList();
 
@@ -293,7 +292,7 @@ class SupabaseService {
         deliveryFee: orderResponse['delivery_fee']?.toDouble() ?? 0.0,
         paymentMethod: PaymentMethod.values.firstWhere(
           (e) => e.name == orderResponse['payment_method'],
-          orElse: () => PaymentMethod.cashOnDelivery,
+          orElse: () => PaymentMethod.cash,
         ),
         items: items,
         cancelledAt: orderResponse['cancelled_at'] != null
@@ -304,6 +303,72 @@ class SupabaseService {
     } catch (e) {
       LoggerService.error('Error getting order details: $e');
       return null;
+    }
+  }
+
+  // إنشاء طلب جديد
+  static Future<String> createOrder({
+    required String userId,
+    required String shippingAddress,
+    required String phone,
+    required double totalAmount,
+    required double deliveryFee,
+    required List<CartItem> items,
+  }) async {
+    try {
+      // 1. إنشاء الطلب
+      final orderResponse = await client
+          .from('orders')
+          .insert({
+            'user_id': userId,
+            'status': OrderStatus.pending.name,
+            'total_amount': totalAmount,
+            'shipping_address': shippingAddress,
+            'phone': phone,
+            'delivery_fee': deliveryFee,
+            'payment_method': PaymentMethod.cash.name,
+            'created_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .select()
+          .single();
+
+      final orderId = orderResponse['id'] as String;
+
+      // 2. إنشاء عناصر الطلب
+      final orderItems = items.map((item) => {
+        'order_id': orderId,
+        'product_id': item.id,
+        'quantity': item.quantity,
+        'price': item.price,
+        'created_at': DateTime.now().toIso8601String(),
+      }).toList();
+
+      await client
+          .from('order_items')
+          .insert(orderItems);
+
+      LoggerService.info('Order created successfully: $orderId');
+      return orderId;
+    } catch (e, stackTrace) {
+      LoggerService.error('Error creating order', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  // الحصول على طلبات المستخدم
+  static Future<List<OrderModel>> getUserOrders(String userId) async {
+    try {
+      final response = await client
+          .from('orders')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List).map((order) => OrderModel.fromJson(order)).toList();
+    } catch (e) {
+      LoggerService.error('Error getting user orders: $e');
+      return [];
     }
   }
 }

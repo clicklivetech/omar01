@@ -16,7 +16,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
   final _notesController = TextEditingController();
-  PaymentMethod _selectedPaymentMethod = PaymentMethod.cash;
   bool _useNewAddress = false;
 
   @override
@@ -42,36 +41,80 @@ class _CheckoutPageState extends State<CheckoutPage> {
         backgroundColor: const Color(0xFF6E58A8),
         foregroundColor: Colors.white,
       ),
-      body: Stepper(
-        type: StepperType.horizontal,
-        currentStep: _currentStep,
-        onStepContinue: () {
-          if (_currentStep < 2) {
-            if (_currentStep == 0 && !_validateAddressStep()) {
-              return;
-            }
-            setState(() {
-              _currentStep++;
-            });
-          } else {
-            _submitOrder();
-          }
-        },
-        onStepCancel: () {
-          if (_currentStep > 0) {
-            setState(() {
-              _currentStep--;
-            });
-          }
-        },
-        controlsBuilder: (context, details) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 16.0),
+      body: Column(
+        children: [
+          Expanded(
+            child: Stepper(
+              type: StepperType.horizontal,
+              currentStep: _currentStep,
+              controlsBuilder: (context, details) => const SizedBox.shrink(),
+              steps: [
+                Step(
+                  title: const Text('العنوان'),
+                  content: _buildAddressStep(),
+                  isActive: _currentStep >= 0,
+                ),
+                Step(
+                  title: const Text('الدفع'),
+                  content: _buildPaymentMethod(),
+                  isActive: _currentStep >= 1,
+                ),
+                Step(
+                  title: const Text('المراجعة'),
+                  content: _buildOrderSummary(),
+                  isActive: _currentStep >= 2,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
             child: Row(
               children: [
+                if (_currentStep > 0)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _currentStep--;
+                        });
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: Color(0xFF6E58A8)),
+                      ),
+                      child: const Text(
+                        'رجوع',
+                        style: TextStyle(color: Color(0xFF6E58A8)),
+                      ),
+                    ),
+                  ),
+                if (_currentStep > 0)
+                  const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: details.onStepContinue,
+                    onPressed: () {
+                      if (_currentStep < 2) {
+                        if (_currentStep == 0 && !_validateAddressStep()) {
+                          return;
+                        }
+                        setState(() {
+                          _currentStep++;
+                        });
+                      } else {
+                        _submitOrder();
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6E58A8),
                       foregroundColor: Colors.white,
@@ -82,37 +125,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                   ),
                 ),
-                if (_currentStep > 0) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: details.onStepCancel,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('رجوع'),
-                    ),
-                  ),
-                ],
               ],
             ),
-          );
-        },
-        steps: [
-          Step(
-            title: const Text('العنوان'),
-            content: _buildAddressStep(),
-            isActive: _currentStep >= 0,
-          ),
-          Step(
-            title: const Text('الدفع'),
-            content: _buildPaymentMethod(),
-            isActive: _currentStep >= 1,
-          ),
-          Step(
-            title: const Text('المراجعة'),
-            content: _buildOrderSummary(),
-            isActive: _currentStep >= 2,
           ),
         ],
       ),
@@ -297,7 +311,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'اختر طريقة الدفع',
+          'طريقة الدفع',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -305,30 +319,82 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
         const SizedBox(height: 16),
         Card(
-          child: RadioListTile<PaymentMethod>(
-            value: PaymentMethod.cash,
-            groupValue: _selectedPaymentMethod,
-            onChanged: (value) {
-              setState(() {
-                _selectedPaymentMethod = value!;
-              });
-            },
-            title: const Text('الدفع عند الاستلام'),
-            subtitle: const Text('ادفع نقداً عند استلام طلبك'),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6E58A8).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.money,
+                    color: Color(0xFF6E58A8),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'الدفع عند الاستلام',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'ادفع نقداً عند استلام طلبك',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Card(
-          child: RadioListTile<PaymentMethod>(
-            value: PaymentMethod.creditCard,
-            groupValue: _selectedPaymentMethod,
-            onChanged: (value) {
-              setState(() {
-                _selectedPaymentMethod = value!;
-              });
-            },
-            title: const Text('بطاقة ائتمان'),
-            subtitle: const Text('ادفع الآن باستخدام بطاقتك'),
+        const SizedBox(height: 16),
+        const Card(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.grey),
+                    SizedBox(width: 8),
+                    Text(
+                      'معلومات مهمة',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '• يرجى تجهيز المبلغ المطلوب عند التوصيل',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  '• سيتم التحقق من المنتجات قبل الدفع',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  '• يمكنك إلغاء الطلب في حال عدم رضاك عن المنتجات',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -433,42 +499,119 @@ class _CheckoutPageState extends State<CheckoutPage> {
         const SizedBox(height: 8),
         Card(
           child: ListTile(
-            leading: Icon(
-              _selectedPaymentMethod == PaymentMethod.cash
-                  ? Icons.money
-                  : Icons.credit_card,
-            ),
-            title: Text(
-              _selectedPaymentMethod == PaymentMethod.cash
-                  ? 'الدفع عند الاستلام'
-                  : 'بطاقة ائتمان',
-            ),
+            leading: const Icon(Icons.money),
+            title: const Text('الدفع عند الاستلام'),
           ),
         ),
       ],
     );
   }
 
-  void _submitOrder() {
+  Future<void> _submitOrder() async {
     if (_currentStep == 2) {
-      final appState = context.read<AppState>();
+      // عرض مربع حوار للتأكيد
+      final mounted = context.mounted;
+      if (!mounted) return;
       
-      appState.createOrder(
-        shippingAddress: _addressController.text,
-        phone: _phoneController.text,
-        paymentMethod: _selectedPaymentMethod,
-        deliveryFee: 30.0, // يمكن تعديل هذه القيمة حسب المنطقة
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم تأكيد طلبك بنجاح!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('تأكيد الطلب'),
+          content: const Text('هل أنت متأكد من إتمام الطلب؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('إلغاء'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6E58A8),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('تأكيد'),
+            ),
+          ],
         ),
       );
-      
-      Navigator.of(context).popUntil((route) => route.isFirst);
+
+      if (confirm != true) return;
+
+      try {
+        if (!context.mounted) return;
+        // عرض مؤشر التحميل
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
+        final appState = context.read<AppState>();
+        
+        // إنشاء الطلب
+        final orderId = await appState.createOrder(
+          shippingAddress: _addressController.text,
+          phone: _phoneController.text,
+          deliveryFee: 30.0,
+        );
+
+        if (!context.mounted) return;
+        // إغلاق مؤشر التحميل
+        Navigator.of(context).pop();
+
+        // عرض رسالة النجاح مع رقم الطلب
+        if (!context.mounted) return;
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('تم تأكيد الطلب'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('تم تأكيد طلبك بنجاح!'),
+                const SizedBox(height: 8),
+                Text('رقم الطلب: $orderId'),
+                const SizedBox(height: 16),
+                const Text('سيتم إرسال تفاصيل الطلب إلى رقم هاتفك.'),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // العودة للصفحة الرئيسية
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6E58A8),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('حسناً'),
+              ),
+            ],
+          ),
+        );
+
+        // مسح السلة
+        appState.clearCart();
+        
+      } catch (e) {
+        if (!context.mounted) return;
+        // إغلاق مؤشر التحميل إذا كان مفتوحاً
+        Navigator.of(context).pop();
+        
+        // عرض رسالة الخطأ
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('حدث خطأ أثناء تأكيد الطلب: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

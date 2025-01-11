@@ -1,123 +1,22 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/product_model.dart';
 import '../models/address_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import '../enums/order_status.dart';
+import '../services/supabase_service.dart';
+import '../services/logger_service.dart';
+import '../models/order_model.dart';
+import '../models/cart_item.dart';
 
-// إضافة نموذج الطلبات
-enum PaymentMethod { cash, creditCard }
-
-class OrderModel {
-  final String id;
-  final String userId;
-  final OrderStatus status;
-  final double totalAmount;
-  final String shippingAddress;
-  final String phone;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final double deliveryFee;
-  final PaymentMethod paymentMethod;
-  final List<OrderItem> items;
-  final DateTime? cancelledAt;
-  final String? oldStatus;
-
-  OrderModel({
-    required this.id,
-    required this.userId,
-    required this.status,
-    required this.totalAmount,
-    required this.shippingAddress,
-    required this.phone,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.deliveryFee,
-    required this.paymentMethod,
-    required this.items,
-    this.cancelledAt,
-    this.oldStatus,
-  });
-
-  bool get canBeCancelled => status == OrderStatus.pending;
-
-  OrderModel copyWith({
-    String? id,
-    String? userId,
-    OrderStatus? status,
-    double? totalAmount,
-    String? shippingAddress,
-    String? phone,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    double? deliveryFee,
-    PaymentMethod? paymentMethod,
-    List<OrderItem>? items,
-    DateTime? cancelledAt,
-    String? oldStatus,
-  }) {
-    return OrderModel(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      status: status ?? this.status,
-      totalAmount: totalAmount ?? this.totalAmount,
-      shippingAddress: shippingAddress ?? this.shippingAddress,
-      phone: phone ?? this.phone,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      deliveryFee: deliveryFee ?? this.deliveryFee,
-      paymentMethod: paymentMethod ?? this.paymentMethod,
-      items: items ?? this.items,
-      cancelledAt: cancelledAt ?? this.cancelledAt,
-      oldStatus: oldStatus ?? this.oldStatus,
-    );
-  }
-}
-
-class OrderItem {
-  final String id;
-  final String orderId;
-  final String productId;
-  final int quantity;
-  final double price;
-  final DateTime createdAt;
-
-  OrderItem({
-    required this.id,
-    required this.orderId,
-    required this.productId,
-    required this.quantity,
-    required this.price,
-    required this.createdAt,
-  });
-
-  OrderItem copyWith({
-    String? id,
-    String? orderId,
-    String? productId,
-    int? quantity,
-    double? price,
-    DateTime? createdAt,
-  }) {
-    return OrderItem(
-      id: id ?? this.id,
-      orderId: orderId ?? this.orderId,
-      productId: productId ?? this.productId,
-      quantity: quantity ?? this.quantity,
-      price: price ?? this.price,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-}
-
-class AppState extends ChangeNotifier {
+class AppState with ChangeNotifier {
   final List<ProductModel> _cartItems = [];
   final List<ProductModel> _favoriteItems = [];
   final List<ProductModel> _products = []; // سيتم تعبئتها من Supabase لاحقاً
   final List<AddressModel> _addresses = [];
-  final List<OrderModel> _orders = [];
+  List<OrderModel> _orders = []; // تم تغييرها من final إلى متغير عادي
   String? _currentUserId;
 
   int _currentPageIndex = 0;
@@ -346,52 +245,58 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // إدارة الطلبات
-  Future<OrderModel> createOrder({
+  // إنشاء طلب جديد
+  Future<String> createOrder({
     required String shippingAddress,
     required String phone,
-    required PaymentMethod paymentMethod,
     required double deliveryFee,
   }) async {
-    final totalAmount = _cartItems.fold<double>(
-      0,
-      (sum, item) => sum + (item.price * item.quantity),
-    );
+    if (_cartItems.isEmpty) throw Exception('السلة فارغة');
+    if (_currentUserId == null) throw Exception('يجب تسجيل الدخول أولاً');
 
-    final orderItems = _cartItems
-        .map((item) => OrderItem(
-              id: const Uuid().v4(),
-              orderId: '', // Will be set after order creation
-              productId: item.id,
-              quantity: item.quantity,
-              price: item.price,
-              createdAt: DateTime.now(),
-            ))
-        .toList();
-
-    final newOrder = OrderModel(
-      id: const Uuid().v4(),
-      userId: _currentUserId ?? 'current_user_id', // TODO: يجب تحديثه مع نظام المستخدمين
-      status: OrderStatus.pending,
-      totalAmount: totalAmount,
-      shippingAddress: shippingAddress,
-      phone: phone,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      deliveryFee: deliveryFee,
-      paymentMethod: paymentMethod,
-      items: orderItems,
-    );
-
-    // Update order items with the new order ID
-    newOrder.items.forEach((item) => item.copyWith(orderId: newOrder.id));
-
-    // TODO: إرسال الطلب إلى Supabase
-    _orders.add(newOrder);
-    _cartItems.clear();
-    notifyListeners();
+    final totalAmount = cartTotal + deliveryFee;
     
-    return newOrder;
+    try {
+      final orderId = await SupabaseService.createOrder(
+        userId: _currentUserId!,
+        shippingAddress: shippingAddress,
+        phone: phone,
+        totalAmount: totalAmount,
+        deliveryFee: deliveryFee,
+        items: _cartItems.map((item) => CartItem(
+          id: item.id,
+          quantity: item.quantity,
+          price: item.price,
+          name: item.name,
+          imageUrl: item.imageUrl,
+        )).toList(),
+      );
+
+      // تحديث قائمة الطلبات
+      await fetchUserOrders();
+      
+      // مسح السلة بعد نجاح الطلب
+      _cartItems.clear();
+      notifyListeners();
+      
+      return orderId;
+    } catch (e) {
+      LoggerService.error('Error creating order in AppState', e);
+      rethrow;
+    }
+  }
+
+  // جلب طلبات المستخدم
+  Future<void> fetchUserOrders() async {
+    if (_currentUserId == null) return;
+
+    try {
+      final orders = await SupabaseService.getUserOrders(_currentUserId!);
+      _orders = orders;
+      notifyListeners();
+    } catch (e) {
+      LoggerService.error('Error fetching user orders', e);
+    }
   }
 
   OrderModel getOrder(String orderId) {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state.dart' as app_provider;
 import '../models/order_model.dart' as order_model;
+import '../providers/app_state.dart';
+import 'package:provider/provider.dart';
 import 'order_details_page.dart';
 import '../enums/order_status.dart';
 
@@ -10,108 +10,62 @@ class OrdersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Orders'),
-          bottom: TabBar(
-            tabs: const [
-              Tab(text: 'Pending'),
-              Tab(text: 'Delivered'),
-              Tab(text: 'Cancelled'),
-            ],
-          ),
-        ),
-        body: TabBarView(
+    final appState = context.watch<AppState>();
+
+    if (appState.orders.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const _OrderList(status: OrderStatus.pending),
-            const _OrderList(status: OrderStatus.delivered),
-            const _OrderList(status: OrderStatus.cancelled),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _OrderList extends StatelessWidget {
-  final OrderStatus status;
-
-  const _OrderList({super.key, required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<app_provider.AppState>(
-      builder: (context, appState, child) {
-        final orders = appState.getOrdersByStatus(status);
-        if (orders.isEmpty) {
-          return const Center(
-            child: Card(
-              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('No orders found'),
+            Icon(
+              Icons.shopping_bag_outlined,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'لا يوجد طلبات',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
               ),
             ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(8),
-          itemCount: orders.length,
-          itemBuilder: (context, index) {
-            final order = orders[index];
-            return _OrderCard(
-              id: order.id,
-              status: order.status,
-              totalAmount: order.totalAmount,
-              createdAt: order.createdAt,
-            );
-          },
-        );
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: appState.orders.length,
+      padding: const EdgeInsets.all(16),
+      itemBuilder: (context, index) {
+        final order = appState.orders[index];
+        return _OrderCard(order: order);
       },
     );
   }
 }
 
 class _OrderCard extends StatelessWidget {
-  final String id;
-  final OrderStatus status;
-  final double totalAmount;
-  final DateTime createdAt;
+  final order_model.OrderModel order;
 
-  const _OrderCard({
-    super.key,
-    required this.id,
-    required this.status,
-    required this.totalAmount,
-    required this.createdAt,
-  });
+  const _OrderCard({required this.order});
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.read<AppState>();
+    final statusColor = _getStatusColor(order.status);
+    final formattedDate = _formatDate(order.createdAt);
+    final formattedTime = _formatTime(order.createdAt);
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OrderDetailsPage(
-                order: order_model.OrderModel(
-                  id: id,
-                  userId: context.read<app_provider.AppState>().currentUserId ?? 'guest_user',
-                  status: status,
-                  totalAmount: totalAmount,
-                  shippingAddress: '',
-                  phone: '',
-                  createdAt: createdAt,
-                  updatedAt: DateTime.now(),
-                  items: const [],
-                  paymentMethod: order_model.PaymentMethod.cashOnDelivery,
-                  deliveryFee: 0,
-                ),
-              ),
+              builder: (context) => OrderDetailsPage(order: order),
             ),
           );
         },
@@ -124,32 +78,71 @@ class _OrderCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Order #$id',
+                    'طلب #${order.id.substring(0, 8)}',
                     style: const TextStyle(
-                      fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                  _buildStatusChip(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _getStatusText(order.status),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Total: \$${totalAmount.toStringAsFixed(2)}'),
+              Text(
+                'طريقة الدفع: ${order.paymentMethod == order_model.PaymentMethod.cash ? 'الدفع عند الاستلام' : 'بطاقة ائتمان'}',
+                style: const TextStyle(color: Colors.grey),
+              ),
               const SizedBox(height: 4),
-              Text('Date: ${_formatDate(createdAt)}'),
-              if (status == OrderStatus.pending)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => _cancelOrder(context),
-                        child: const Text('Cancel Order'),
-                      ),
-                    ],
+              Text(
+                'المبلغ الإجمالي: ${order.totalAmount} ريال',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6E58A8),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    formattedDate,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  Text(
+                    formattedTime,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+              if (order.canBeCancelled) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => _showCancelDialog(context, order.id, appState),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
+                    child: const Text('إلغاء الطلب'),
                   ),
                 ),
+              ],
             ],
           ),
         ),
@@ -157,69 +150,85 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip() {
-    Color backgroundColor;
-    const textColor = Colors.white;
-
-    switch (status) {
-      case OrderStatus.pending:
-        backgroundColor = Colors.orange;
-        break;
-      case OrderStatus.delivered:
-        backgroundColor = Colors.green;
-        break;
-      case OrderStatus.cancelled:
-        backgroundColor = Colors.red;
-        break;
-      case OrderStatus.confirmed:
-      case OrderStatus.processing:
-      case OrderStatus.shipping:
-        backgroundColor = Colors.blue;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        _capitalizeFirst(status.name),
-        style: TextStyle(color: textColor),
-      ),
-    );
+  String _formatDate(DateTime date) {
+    return '${date.year}/${date.month}/${date.day}';
   }
 
-  void _cancelOrder(BuildContext context) {
-    showDialog(
+  String _formatTime(DateTime date) {
+    return '${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return Colors.orange;
+      case OrderStatus.confirmed:
+        return Colors.blue;
+      case OrderStatus.processing:
+        return Colors.purple;
+      case OrderStatus.shipping:
+        return Colors.indigo;
+      case OrderStatus.delivered:
+        return Colors.green;
+      case OrderStatus.cancelled:
+        return Colors.red;
+    }
+  }
+
+  String _getStatusText(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return 'في انتظار التأكيد';
+      case OrderStatus.confirmed:
+        return 'تم تأكيد الطلب';
+      case OrderStatus.processing:
+        return 'جاري التجهيز';
+      case OrderStatus.shipping:
+        return 'في الشحن';
+      case OrderStatus.delivered:
+        return 'تم التوصيل';
+      case OrderStatus.cancelled:
+        return 'ملغي';
+    }
+  }
+
+  Future<void> _showCancelDialog(BuildContext context, String orderId, AppState appState) async {
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cancel Order'),
-        content: const Text('Are you sure you want to cancel this order?'),
+        title: const Text('تأكيد إلغاء الطلب'),
+        content: const Text('هل أنت متأكد من إلغاء الطلب؟'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('No'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('لا'),
           ),
           TextButton(
-            onPressed: () {
-              context.read<app_provider.AppState>().cancelOrder(id);
-              Navigator.pop(context);
-            },
-            child: const Text('Yes'),
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('نعم، إلغاء الطلب'),
           ),
         ],
       ),
     );
-  }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  String _capitalizeFirst(String text) {
-    if (text.isEmpty) return text;
-    return text[0].toUpperCase() + text.substring(1);
+    if (confirm == true) {
+      try {
+        await appState.cancelOrder(orderId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم إلغاء الطلب بنجاح')),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('حدث خطأ أثناء إلغاء الطلب: $e')),
+          );
+        }
+      }
+    }
   }
 }
