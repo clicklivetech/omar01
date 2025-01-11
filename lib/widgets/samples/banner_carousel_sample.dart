@@ -1,41 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../models/banner_model.dart';
 
-class BannerCarouselSample extends StatelessWidget {
+class BannerCarouselSample extends StatefulWidget {
   const BannerCarouselSample({super.key});
 
   @override
+  State<BannerCarouselSample> createState() => _BannerCarouselSampleState();
+}
+
+class _BannerCarouselSampleState extends State<BannerCarouselSample> {
+  final _supabase = Supabase.instance.client;
+  List<BannerModel> _banners = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBanners();
+  }
+
+  Future<void> _loadBanners() async {
+    try {
+      final response = await _supabase
+          .from('banners')
+          .select()
+          .eq('is_active', true)
+          .order('priority', ascending: true);
+
+      setState(() {
+        _banners = (response as List)
+            .map((banner) => BannerModel.fromJson(banner))
+            .toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading banners: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // نموذج بيانات البانر
-    final List<Map<String, String>> banners = [
-      {
-        'id': '1',
-        'title': 'عروض رمضان',
-        'subtitle': 'خصومات تصل إلى 50%',
-        'image_url': 'https://example.com/banner1.jpg',
-        'background_color': '#6E58A8',
-        'action_url': '/ramadan-offers',
-      },
-      {
-        'id': '2',
-        'title': 'منتجات جديدة',
-        'subtitle': 'تسوق أحدث المنتجات',
-        'image_url': 'https://example.com/banner2.jpg',
-        'background_color': '#4CAF50',
-        'action_url': '/new-products',
-      },
-    ];
+    if (_isLoading) {
+      return Container(
+        height: 200,
+        margin: const EdgeInsets.symmetric(vertical: 16),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_banners.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       height: 200,
       margin: const EdgeInsets.symmetric(vertical: 16),
       child: FlutterCarousel(
-        items: banners.map((banner) {
+        items: _banners.map((banner) {
           return GestureDetector(
             onTap: () {
-              if (banner['action_url']?.isNotEmpty ?? false) {
-                debugPrint('Navigate to: ${banner['action_url']}');
+              if (banner.actionUrl.isNotEmpty) {
+                debugPrint('Navigate to: ${banner.actionUrl}');
               }
             },
             child: Container(
@@ -44,7 +77,7 @@ class BannerCarouselSample extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 color: Color(
                   int.parse(
-                    (banner['background_color'] ?? '#000000').replaceAll('#', '0xFF'),
+                    banner.backgroundColor.replaceAll('#', '0xFF'),
                   ),
                 ).withOpacity(0.8),
               ),
@@ -55,7 +88,7 @@ class BannerCarouselSample extends StatelessWidget {
                   children: [
                     // صورة البانر
                     CachedNetworkImage(
-                      imageUrl: banner['image_url'] ?? '',
+                      imageUrl: banner.imageUrl,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
                         color: Colors.grey[200],
@@ -77,12 +110,12 @@ class BannerCarouselSample extends StatelessWidget {
                           colors: [
                             Color(
                               int.parse(
-                                (banner['background_color'] ?? '#000000').replaceAll('#', '0xFF'),
+                                banner.backgroundColor.replaceAll('#', '0xFF'),
                               ),
                             ).withOpacity(0.1),
                             Color(
                               int.parse(
-                                (banner['background_color'] ?? '#000000').replaceAll('#', '0xFF'),
+                                banner.backgroundColor.replaceAll('#', '0xFF'),
                               ),
                             ).withOpacity(0.6),
                           ],
@@ -101,7 +134,7 @@ class BannerCarouselSample extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              banner['title'] ?? '',
+                              banner.title,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -115,9 +148,9 @@ class BannerCarouselSample extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            if (banner['subtitle']?.isNotEmpty ?? false)
+                            if (banner.subtitle.isNotEmpty)
                               Text(
-                                banner['subtitle'] ?? '',
+                                banner.subtitle,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
