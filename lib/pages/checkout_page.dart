@@ -565,17 +565,68 @@ class _CheckoutPageState extends State<CheckoutPage> {
         if (!context.mounted) return;
         await showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('تم تأكيد الطلب'),
+            title: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green, size: 28),
+                SizedBox(width: 8),
+                Text('تم تأكيد الطلب'),
+              ],
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('تم تأكيد طلبك بنجاح!'),
-                const SizedBox(height: 8),
-                Text('رقم الطلب: $orderId'),
+                Text(
+                  'تم تأكيد طلبك بنجاح!',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                const Text('سيتم إرسال تفاصيل الطلب إلى رقم هاتفك.'),
+                Row(
+                  children: [
+                    Icon(Icons.receipt_long, color: Color(0xFF6E58A8), size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'رقم الطلب: $orderId',
+                        style: TextStyle(
+                          color: Color(0xFF6E58A8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.local_shipping, color: Colors.grey[600], size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'سيتم توصيل طلبك إلى العنوان المحدد خلال 24-48 ساعة',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.phone_android, color: Colors.grey[600], size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'سيتم إرسال تفاصيل الطلب وتحديثات الحالة إلى رقم هاتفك',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             actions: [
@@ -584,12 +635,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   Navigator.of(context).pop();
                   // العودة للصفحة الرئيسية
                   Navigator.of(context).popUntil((route) => route.isFirst);
+                  // تحديث مؤشر الصفحة للانتقال إلى صفحة الطلبات
+                  appState.setCurrentPageIndex(3);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6E58A8),
                   foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 45),
                 ),
-                child: const Text('حسناً'),
+                child: const Text('عرض تفاصيل الطلب'),
               ),
             ],
           ),
