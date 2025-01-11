@@ -35,7 +35,7 @@ class AppState with ChangeNotifier {
 
   double get cartTotal => _cartItems.fold(
     0.0, 
-    (sum, item) => sum + (item.price * item.quantity)
+    (sum, item) => sum + (item.price * getCartItemQuantity(item.id))
   );
 
   int get cartItemsCount => _cartItems.length;  // Number of unique products in cart
@@ -218,18 +218,18 @@ class AppState with ChangeNotifier {
     return _favoriteItems.contains(product);
   }
 
-  int getCartItemQuantity(String productId) {
-    final product = _cartItems.firstWhere(
-      (item) => item.productId == productId,
+  int getCartItemQuantity(String itemId) {
+    final item = _cartItems.firstWhere(
+      (item) => item.id == itemId,
       orElse: () => CartItemModel(
         productId: '',
-        name: '',
-        price: 0,
         quantity: 0,
+        price: 0,
+        name: '',
         imageUrl: '',
       ),
     );
-    return product.quantity;
+    return item.quantity;
   }
 
   void updateCartItemQuantity(String productId, int newQuantity) {

@@ -405,7 +405,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final appState = context.watch<AppState>();
     final cartItems = appState.cartItems;
     final subtotal = appState.cartTotal;
-    const shippingFee = 30.0;
+    final shippingFee = 30.0; // رسوم التوصيل الثابتة
     final total = subtotal + shippingFee;
 
     return Column(
@@ -559,14 +559,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${item.price * appState.getCartItemQuantity(item.id)} جنيه',
+                          '${(item.price * appState.getCartItemQuantity(item.id)).toStringAsFixed(2)} جنيه',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         if (item.discountPrice != 0) 
                           Text(
-                            '${item.discountPrice} جنيه',
+                            '${item.discountPrice.toStringAsFixed(2)} جنيه',
                             style: const TextStyle(
                               decoration: TextDecoration.lineThrough,
                               color: Colors.grey,
@@ -600,7 +600,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     style: TextStyle(color: Color(0xFF757575)),
                   ),
                   Text(
-                    '$subtotal جنيه',
+                    '${subtotal.toStringAsFixed(2)} جنيه',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -614,7 +614,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     style: TextStyle(color: Color(0xFF757575)),
                   ),
                   Text(
-                    '$shippingFee جنيه',
+                    '${shippingFee.toStringAsFixed(2)} جنيه',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -631,7 +631,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                   ),
                   Text(
-                    '$total جنيه',
+                    '${total.toStringAsFixed(2)} جنيه',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
