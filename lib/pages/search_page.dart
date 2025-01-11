@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/supabase_service.dart';
 import '../widgets/product_card.dart';
+import '../widgets/product_card_shimmer.dart';
 import '../models/product_model.dart';
 
 class SearchPage extends StatefulWidget {
@@ -17,16 +19,7 @@ class _SearchPageState extends State<SearchPage> {
   List<ProductModel> _searchResults = [];
   bool _isLoading = false;
   Timer? _debounce;
-  
-  // قائمة الاقتراحات الشائعة
-  final List<String> _popularSearches = [
-    'ملابس',
-    'أحذية',
-    'إكسسوارات',
-    'عطور',
-    'ساعات',
-    'حقائب',
-  ];
+  List<String> _recentSearches = [];
 
   // حالة البحث
   bool get _isEmpty => _searchQuery.isEmpty && _searchResults.isEmpty;
@@ -37,6 +30,7 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _searchController.text = _searchQuery;
+    _loadRecentSearches();
   }
 
   @override
@@ -44,6 +38,38 @@ class _SearchPageState extends State<SearchPage> {
     _searchController.dispose();
     _debounce?.cancel();
     super.dispose();
+  }
+
+  // تحميل عمليات البحث السابقة
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentSearches = prefs.getStringList('recent_searches') ?? [];
+    });
+  }
+
+  // حفظ عملية بحث جديدة
+  Future<void> _saveSearch(String query) async {
+    if (query.isEmpty) return;
+    
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentSearches.remove(query); // إزالة إذا كان موجوداً
+      _recentSearches.insert(0, query); // إضافة في البداية
+      if (_recentSearches.length > 5) { // الاحتفاظ بآخر 5 عمليات بحث فقط
+        _recentSearches.removeLast();
+      }
+    });
+    await prefs.setStringList('recent_searches', _recentSearches);
+  }
+
+  // مسح عمليات البحث السابقة
+  Future<void> _clearRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('recent_searches');
+    setState(() {
+      _recentSearches.clear();
+    });
   }
 
   // تأخير البحث لتحسين الأداء
@@ -78,6 +104,7 @@ class _SearchPageState extends State<SearchPage> {
           _searchResults = results;
           _isLoading = false;
         });
+        _saveSearch(query); // حفظ عملية البحث
       }
     } catch (e) {
       if (mounted) {
@@ -97,53 +124,67 @@ class _SearchPageState extends State<SearchPage> {
 
   // بناء واجهة البحث الفارغة
   Widget _buildEmptyState() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'عمليات البحث الشائعة',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF6E58A8),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _popularSearches.map((search) => ActionChip(
-              label: Text(search),
-              onPressed: () {
-                _searchController.text = search;
-                _onSearchChanged(search);
-              },
-              backgroundColor: Colors.grey[200],
-              labelStyle: const TextStyle(color: Color(0xFF6E58A8)),
-            )).toList(),
-          ),
-          const SizedBox(height: 32),
-          Center(
-            child: Column(
+          if (_recentSearches.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.search,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'ابدأ البحث عن منتجاتك المفضلة',
+                const Text(
+                  'عمليات البحث السابقة',
                   style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6E58A8),
                   ),
+                ),
+                TextButton(
+                  onPressed: _clearRecentSearches,
+                  child: const Text('مسح'),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _recentSearches.map((search) => ActionChip(
+                label: Text(search),
+                onPressed: () {
+                  _searchController.text = search;
+                  _onSearchChanged(search);
+                },
+                backgroundColor: Colors.grey[100],
+                labelStyle: const TextStyle(color: Color(0xFF6E58A8)),
+                avatar: const Icon(Icons.history, size: 16),
+              )).toList(),
+            ),
+          ],
+          if (_recentSearches.isEmpty) ...[
+            const SizedBox(height: 32),
+            Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.search,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'ابدأ البحث عن منتجاتك المفضلة',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -234,10 +275,16 @@ class _SearchPageState extends State<SearchPage> {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6E58A8)),
+            ? GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                 ),
+                itemCount: 6, // عدد العناصر الوهمية أثناء التحميل
+                itemBuilder: (context, index) => const ProductCardShimmer(),
               )
             : _isEmpty
                 ? _buildEmptyState()

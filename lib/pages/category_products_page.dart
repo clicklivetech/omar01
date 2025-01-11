@@ -4,6 +4,7 @@ import '../models/product_model.dart';
 import '../services/supabase_service.dart';
 import '../services/logger_service.dart';
 import '../widgets/product_card.dart';
+import '../widgets/product_card_shimmer.dart';
 import '../utils/arabic_utils.dart';
 
 class CategoryProductsPage extends StatefulWidget {
@@ -127,7 +128,17 @@ class _CategoryProductsPageState extends State<CategoryProductsPage> {
             child: RefreshIndicator(
               onRefresh: _loadProducts,
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? GridView.builder(
+                      padding: const EdgeInsets.all(16),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.7,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: 6, // عدد العناصر الوهمية أثناء التحميل
+                      itemBuilder: (context, index) => const ProductCardShimmer(),
+                    )
                   : _errorMessage.isNotEmpty
                       ? Center(
                           child: Column(

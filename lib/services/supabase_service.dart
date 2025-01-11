@@ -77,18 +77,22 @@ class SupabaseService {
   // البحث عن المنتجات
   static Future<List<ProductModel>> searchProducts(String query) async {
     try {
+      LoggerService.info('Searching for products with query: $query');
+      
       final response = await client
           .from('products')
           .select()
-          .textSearch('name', query)
+          .or('name.ilike.%${query}%,description.ilike.%${query}%')
           .eq('is_active', true)
           .order('created_at');
 
+      LoggerService.info('Found ${(response as List).length} products matching query: $query');
+      
       return (response as List)
           .map((item) => ProductModel.fromJson(item))
           .toList();
-    } catch (e) {
-      LoggerService.error('Error searching products: $e');
+    } catch (e, stackTrace) {
+      LoggerService.error('Error searching products: $e', e, stackTrace);
       return [];
     }
   }
