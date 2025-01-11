@@ -1,10 +1,10 @@
 class BannerModel {
   final int id;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final String imageUrl;
-  final String backgroundColor;
-  final String actionUrl;
+  final String? backgroundColor;
+  final String? actionUrl;
   final bool isActive;
   final int priority;
   final DateTime createdAt;
@@ -13,10 +13,10 @@ class BannerModel {
   BannerModel({
     required this.id,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.imageUrl,
-    required this.backgroundColor,
-    required this.actionUrl,
+    this.backgroundColor,
+    this.actionUrl,
     required this.isActive,
     required this.priority,
     required this.createdAt,
@@ -27,10 +27,10 @@ class BannerModel {
     return BannerModel(
       id: json['id'] as int,
       title: json['title'] as String,
-      subtitle: json['subtitle'] as String,
+      subtitle: json['subtitle'] as String?,
       imageUrl: json['image_url'] as String,
-      backgroundColor: json['background_color'] as String,
-      actionUrl: json['action_url'] as String,
+      backgroundColor: json['background_color'] as String?,
+      actionUrl: json['action_url'] as String?,
       isActive: json['is_active'] as bool,
       priority: json['priority'] as int,
       createdAt: DateTime.parse(json['created_at'] as String),

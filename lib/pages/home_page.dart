@@ -102,11 +102,13 @@ class _HomePageState extends State<HomePage> {
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: Color(
-                  int.parse(
-                    banner.backgroundColor.replaceAll('#', '0xFF'),
-                  ),
-                ).withOpacity(0.8),
+                color: banner.backgroundColor != null
+                    ? Color(
+                        int.parse(
+                          banner.backgroundColor!.replaceAll('#', '0xFF'),
+                        ),
+                      ).withOpacity(0.8)
+                    : Colors.grey[200]!.withOpacity(0.8),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -133,16 +135,20 @@ class _HomePageState extends State<HomePage> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Color(
-                              int.parse(
-                                banner.backgroundColor.replaceAll('#', '0xFF'),
-                              ),
-                            ),
-                            Color(
-                              int.parse(
-                                banner.backgroundColor.replaceAll('#', '0xFF'),
-                              ),
-                            ).withOpacity(0.6),
+                            banner.backgroundColor != null
+                                ? Color(
+                                    int.parse(
+                                      banner.backgroundColor!.replaceAll('#', '0xFF'),
+                                    ),
+                                  )
+                                : Colors.grey[200]!,
+                            banner.backgroundColor != null
+                                ? Color(
+                                    int.parse(
+                                      banner.backgroundColor!.replaceAll('#', '0xFF'),
+                                    ),
+                                  ).withOpacity(0.6)
+                                : Colors.grey[200]!.withOpacity(0.6),
                           ],
                         ),
                       ),
@@ -172,20 +178,21 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                             ),
-                            Text(
-                              banner.subtitle,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                shadows: [
-                                  Shadow(
-                                    offset: Offset(1, 1),
-                                    blurRadius: 3,
-                                    color: Colors.black45,
-                                  ),
-                                ],
+                            if (banner.subtitle != null)
+                              Text(
+                                banner.subtitle!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(1, 1),
+                                      blurRadius: 3,
+                                      color: Colors.black45,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -299,6 +306,20 @@ class _HomePageState extends State<HomePage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (category.description != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            category.description!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                     ],
                   ),
                 ),

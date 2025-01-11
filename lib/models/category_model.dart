@@ -1,7 +1,7 @@
 class CategoryModel {
   final String id;
   final String name;
-  final String description;
+  final String? description;
   final String imageUrl;
   final bool isHome;
   final DateTime createdAt;
@@ -10,7 +10,7 @@ class CategoryModel {
   CategoryModel({
     required this.id,
     required this.name,
-    required this.description,
+    this.description,
     required this.imageUrl,
     required this.isHome,
     required this.createdAt,
@@ -21,7 +21,7 @@ class CategoryModel {
     return CategoryModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      description: json['description'] as String,
+      description: json['description'] as String?,
       imageUrl: json['image_url'] as String,
       isHome: json['is_home'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),

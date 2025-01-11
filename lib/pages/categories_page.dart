@@ -119,15 +119,16 @@ class _CategoriesPageState extends State<CategoriesPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    category.description,
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
+                                  if (category.description != null)
+                                    Text(
+                                      category.description!,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                 ],
                               ),
                             ),
