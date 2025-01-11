@@ -6,6 +6,7 @@ import 'categories_page.dart';
 import '../widgets/product_card.dart';
 import 'package:shimmer/shimmer.dart';
 import '../models/product_model.dart';
+import '../widgets/samples/banner_carousel_sample.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -585,6 +586,19 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     _buildSearchBar(),
                     _buildBannerCarousel(),
+                    const Divider(height: 32, thickness: 1),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'نموذج البانر',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const BannerCarouselSample(),
+                    const Divider(height: 32, thickness: 1),
                     _buildCategoriesSection(),
                     _buildFeaturedProductsSection(),
                     const SizedBox(height: 16),
