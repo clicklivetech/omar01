@@ -6,7 +6,9 @@ import 'services/supabase_service.dart';
 import 'services/cart_service.dart';
 import 'services/favorites_service.dart';
 import 'pages/main_layout.dart';
+import 'pages/category_products_page.dart';
 import 'providers/app_state.dart';
+import 'models/category_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +59,15 @@ class MyApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         home: const MainLayout(),
+        onGenerateRoute: (settings) {
+          if (settings.name == '/category-products') {
+            final category = settings.arguments as CategoryModel;
+            return MaterialPageRoute(
+              builder: (context) => CategoryProductsPage(category: category),
+            );
+          }
+          return null;
+        },
       ),
     );
   }

@@ -33,12 +33,40 @@ class _CategoryPageState extends State<CategoryPage> {
       if (query.isEmpty) {
         filteredCategories = List.from(categories);
       } else {
+        // تحويل النص المدخل إلى حروف عربية موحدة
+        String normalizedQuery = _normalizeArabicText(query);
+        
         filteredCategories = categories
-            .where((category) =>
-                category.name.toLowerCase().contains(query.toLowerCase()))
+            .where((category) {
+              // تحويل اسم القسم إلى حروف عربية موحدة
+              String normalizedName = _normalizeArabicText(category.name);
+              return normalizedName.contains(normalizedQuery);
+            })
             .toList();
       }
     });
+  }
+
+  // دالة لتوحيد شكل الحروف العربية
+  String _normalizeArabicText(String input) {
+    // تحويل الهمزات المختلفة إلى شكل موحد
+    input = input.replaceAll('أ', 'ا');
+    input = input.replaceAll('إ', 'ا');
+    input = input.replaceAll('آ', 'ا');
+    
+    // تحويل التاء المربوطة إلى هاء
+    input = input.replaceAll('ة', 'ه');
+    
+    // تحويل الياء المقصورة إلى ياء عادية
+    input = input.replaceAll('ى', 'ي');
+    
+    // إزالة التشكيل
+    input = input.replaceAll(RegExp(r'[\u064B-\u065F]'), '');
+    
+    // إزالة المسافات الزائدة
+    input = input.trim().replaceAll(RegExp(r'\s+'), ' ');
+    
+    return input.toLowerCase();
   }
 
   Future<void> _loadCategories() async {
