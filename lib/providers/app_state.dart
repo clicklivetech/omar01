@@ -9,10 +9,11 @@ import '../enums/order_status.dart';
 import '../services/supabase_service.dart';
 import '../services/logger_service.dart';
 import '../models/order_model.dart';
-import '../models/cart_item.dart';
+import '../models/cart_item_model.dart';
+import '../enums/payment_method.dart';
 
 class AppState with ChangeNotifier {
-  final List<ProductModel> _cartItems = [];
+  final List<CartItemModel> _cartItems = [];
   final List<ProductModel> _favoriteItems = [];
   final List<ProductModel> _products = []; // سيتم تعبئتها من Supabase لاحقاً
   final List<AddressModel> _addresses = [];
@@ -26,7 +27,7 @@ class AppState with ChangeNotifier {
     _loadCart();
   }
 
-  List<ProductModel> get cartItems => _cartItems;
+  List<CartItemModel> get cartItems => _cartItems;
   List<ProductModel> get favoriteItems => _favoriteItems;
   List<ProductModel> get products => _products;
   List<ProductModel> get featuredProducts => _products.where((p) => p.isFeatured).toList();
@@ -67,19 +68,15 @@ class AppState with ChangeNotifier {
   }
 
   Future<void> _loadCart() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cartJson = prefs.getString('cart_items');
-      if (cartJson != null) {
-        final cartList = jsonDecode(cartJson) as List;
-        _cartItems.clear();
-        _cartItems.addAll(
-          cartList.map((item) => ProductModel.fromJson(item as Map<String, dynamic>)).toList()
-        );
-        notifyListeners();
-      }
-    } catch (e) {
-      LoggerService.error('Error loading cart: $e');
+    final prefs = await SharedPreferences.getInstance();
+    final cartJson = prefs.getString('cart');
+    if (cartJson != null) {
+      final List<dynamic> decodedCart = jsonDecode(cartJson);
+      _cartItems.clear();
+      _cartItems.addAll(
+        decodedCart.map((item) => CartItemModel.fromJson(item)).toList()
+      );
+      notifyListeners();
     }
   }
 
@@ -87,7 +84,7 @@ class AppState with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cartJson = jsonEncode(_cartItems.map((item) => item.toJson()).toList());
-      await prefs.setString('cart_items', cartJson);
+      await prefs.setString('cart', cartJson);
     } catch (e) {
       LoggerService.error('Error saving cart: $e');
     }
@@ -187,22 +184,24 @@ class AppState with ChangeNotifier {
   }
 
   void addToCart(ProductModel product) {
-    final existingIndex = _cartItems.indexWhere((item) => item.id == product.id);
+    final existingIndex = _cartItems.indexWhere((item) => item.productId == product.id);
     if (existingIndex == -1) {
-      _cartItems.add(product.copyWith(quantity: 1));
+      // إضافة منتج جديد
+      _cartItems.add(CartItemModel.fromProduct(product));
     } else {
-      final currentQuantity = _cartItems[existingIndex].quantity;
-      _cartItems[existingIndex] = _cartItems[existingIndex].copyWith(
-        quantity: currentQuantity + 1
+      // تحديث الكمية للمنتج الموجود
+      final currentItem = _cartItems[existingIndex];
+      _cartItems[existingIndex] = currentItem.copyWith(
+        quantity: currentItem.quantity + 1,
       );
     }
-    _saveCart();  // Save cart after modification
+    _saveCart();
     notifyListeners();
   }
 
   void removeFromCart(String productId) {
-    _cartItems.removeWhere((item) => item.id == productId);
-    _saveCart();  // Save cart after modification
+    _cartItems.removeWhere((item) => item.productId == productId);
+    _saveCart();
     notifyListeners();
   }
 
@@ -221,39 +220,30 @@ class AppState with ChangeNotifier {
 
   int getCartItemQuantity(String productId) {
     final product = _cartItems.firstWhere(
-      (item) => item.id == productId,
-      orElse: () => ProductModel(
-        id: '',
+      (item) => item.productId == productId,
+      orElse: () => CartItemModel(
+        productId: '',
         name: '',
-        description: '',
         price: 0,
-        imageUrl: '',
-        categoryId: '',
-        stockQuantity: 0,
-        isFeatured: false,
-        isActive: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        unit: 'piece',
-        dailyDeals: false,
         quantity: 0,
+        imageUrl: '',
       ),
     );
     return product.quantity;
   }
 
   void updateCartItemQuantity(String productId, int newQuantity) {
-    final index = _cartItems.indexWhere((item) => item.id == productId);
+    final index = _cartItems.indexWhere((item) => item.productId == productId);
     if (index != -1) {
       _cartItems[index] = _cartItems[index].copyWith(quantity: newQuantity);
-      _saveCart();  // Save cart after modification
+      _saveCart();
       notifyListeners();
     }
   }
 
   void clearCart() {
     _cartItems.clear();
-    _saveCart();  // Save cart after modification
+    _saveCart();
     notifyListeners();
   }
 
@@ -300,13 +290,13 @@ class AppState with ChangeNotifier {
     
     try {
       final orderId = await SupabaseService.createOrder(
-        userId: _currentUserId,  // يمكن أن يكون null
+        userId: _currentUserId,
         shippingAddress: shippingAddress,
         phone: phone,
         totalAmount: totalAmount,
         deliveryFee: deliveryFee,
-        items: cartItems.map((item) => CartItem(
-          id: item.id,
+        items: _cartItems.map((item) => CartItemModel(
+          productId: item.productId,
           quantity: item.quantity,
           price: item.price,
           name: item.name,
@@ -348,14 +338,14 @@ class AppState with ChangeNotifier {
       orElse: () => OrderModel(
         id: orderId,
         userId: 'not_found',
-        status: OrderStatus.pending,
+        status: OrderStatus.pending.toString().split('.').last,
         totalAmount: 0,
         shippingAddress: '',
         phone: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         deliveryFee: 0,
-        paymentMethod: PaymentMethod.cash,
+        paymentMethod: PaymentMethod.cash.toString().split('.').last,
         items: [],
       ),
     );
@@ -369,7 +359,7 @@ class AppState with ChangeNotifier {
       final updatedOrder = OrderModel(
         id: order.id,
         userId: order.userId,
-        status: OrderStatus.cancelled,
+        status: OrderStatus.cancelled.toString().split('.').last,
         totalAmount: order.totalAmount,
         shippingAddress: order.shippingAddress,
         phone: order.phone,
@@ -379,7 +369,7 @@ class AppState with ChangeNotifier {
         paymentMethod: order.paymentMethod,
         items: order.items,
         cancelledAt: DateTime.now(),
-        oldStatus: order.status.toString().split('.').last,
+        oldStatus: order.status,
       );
 
       try {
@@ -396,7 +386,7 @@ class AppState with ChangeNotifier {
 
   // استرجاع الطلبات حسب الحالة
   List<OrderModel> getOrdersByStatus(OrderStatus status) {
-    return _orders.where((order) => order.status == status).toList();
+    return _orders.where((order) => order.status == status.toString().split('.').last).toList();
   }
 
   // استرجاع آخر الطلبات
@@ -404,5 +394,41 @@ class AppState with ChangeNotifier {
     final sortedOrders = List<OrderModel>.from(_orders)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return sortedOrders.take(5).toList();
+  }
+
+  void updateOrder(String orderId, OrderStatus newStatus) async {
+    try {
+      await SupabaseService.updateOrder(
+        orderId: orderId,
+        status: newStatus.toString().split('.').last,
+      );
+      
+      final orderIndex = _orders.indexWhere((order) => order.id == orderId);
+      if (orderIndex != -1) {
+        final oldStatus = _orders[orderIndex].status;
+        _orders[orderIndex] = OrderModel(
+          id: _orders[orderIndex].id,
+          userId: _orders[orderIndex].userId,
+          status: newStatus.toString().split('.').last,
+          totalAmount: _orders[orderIndex].totalAmount,
+          shippingAddress: _orders[orderIndex].shippingAddress,
+          phone: _orders[orderIndex].phone,
+          createdAt: _orders[orderIndex].createdAt,
+          updatedAt: DateTime.now(),
+          deliveryFee: _orders[orderIndex].deliveryFee,
+          paymentMethod: _orders[orderIndex].paymentMethod,
+          items: _orders[orderIndex].items,
+          oldStatus: oldStatus,
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      LoggerService.error('Error updating order: $e');
+    }
+  }
+
+  bool canCancelOrder(OrderModel order) {
+    return order.status != OrderStatus.cancelled.toString().split('.').last &&
+           order.status != OrderStatus.delivered.toString().split('.').last;
   }
 }

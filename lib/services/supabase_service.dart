@@ -4,8 +4,9 @@ import '../models/category_model.dart';
 import '../models/banner.dart' as app_banner;
 import '../services/logger_service.dart';
 import '../models/order_model.dart';
-import '../models/cart_item.dart';
+import '../models/cart_item_model.dart';
 import '../enums/order_status.dart';
+import '../enums/payment_method.dart';
 
 class SupabaseService {
   static final client = SupabaseClient(
@@ -212,6 +213,27 @@ class SupabaseService {
   }
 
   // تحديث حالة الطلب
+  static Future<void> updateOrder({
+    required String orderId,
+    required String status,
+  }) async {
+    try {
+      await client
+          .from('orders')
+          .update({
+            'status': status,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', orderId);
+      
+      LoggerService.info('Order status updated successfully: $orderId');
+    } catch (e) {
+      LoggerService.error('Error updating order status: $e');
+      rethrow;
+    }
+  }
+
+  // تحديث حالة الطلب
   static Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
       await client
@@ -283,7 +305,7 @@ class SupabaseService {
         status: OrderStatus.values.firstWhere(
           (e) => e.name == orderResponse['status'],
           orElse: () => OrderStatus.pending,
-        ),
+        ).name,
         totalAmount: orderResponse['total_amount'].toDouble(),
         shippingAddress: orderResponse['shipping_address'],
         phone: orderResponse['phone'],
@@ -293,7 +315,7 @@ class SupabaseService {
         paymentMethod: PaymentMethod.values.firstWhere(
           (e) => e.name == orderResponse['payment_method'],
           orElse: () => PaymentMethod.cash,
-        ),
+        ).name,
         items: items,
         cancelledAt: orderResponse['cancelled_at'] != null
             ? DateTime.parse(orderResponse['cancelled_at'])
@@ -313,44 +335,31 @@ class SupabaseService {
     required String phone,
     required double totalAmount,
     required double deliveryFee,
-    required List<CartItem> items,
+    required List<CartItemModel> items,
   }) async {
     try {
-      // 1. إنشاء الطلب
-      final orderResponse = await client
+      final order = {
+        'user_id': userId,
+        'status': OrderStatus.pending.name,
+        'total_amount': totalAmount,
+        'shipping_address': shippingAddress,
+        'phone': phone,
+        'delivery_fee': deliveryFee,
+        'payment_method': 'cash',
+        'items': items.map((item) => item.toJson()).toList(),
+      };
+
+      final response = await client
           .from('orders')
-          .insert({
-            'user_id': userId,  
-            'shipping_address': shippingAddress,
-            'phone': phone,
-            'total_amount': totalAmount,
-            'delivery_fee': deliveryFee,
-            'status': OrderStatus.pending.name,
-            'created_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
-          })
+          .insert(order)
           .select()
           .single();
 
-      final orderId = orderResponse['id'] as String;
-
-      // 2. إنشاء عناصر الطلب
-      final orderItems = items.map((item) => {
-        'order_id': orderId,
-        'product_id': item.id,
-        'quantity': item.quantity,
-        'price': item.price,
-        'created_at': DateTime.now().toIso8601String(),
-      }).toList();
-
-      await client
-          .from('order_items')
-          .insert(orderItems);
-
+      final orderId = response['id'] as String;
       LoggerService.info('Order created successfully: $orderId');
       return orderId;
-    } catch (e, stackTrace) {
-      LoggerService.error('Error creating order in Supabase: $e\n$stackTrace');
+    } catch (e) {
+      LoggerService.error('Error creating order: $e');
       rethrow;
     }
   }

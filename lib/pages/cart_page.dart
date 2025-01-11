@@ -69,7 +69,7 @@ class CartPage extends StatelessWidget {
                             onUpdateQuantity: (newQuantity) async {
                               try {
                                 if (newQuantity <= 0) {
-                                  await cartService.removeFromCart(cartItem.product.id);
+                                  await cartService.removeFromCart(cartItem.productId);
                                   if (context.mounted) {
                                     AppNotifications.showSuccess(
                                       context,
@@ -78,7 +78,7 @@ class CartPage extends StatelessWidget {
                                   }
                                 } else {
                                   await cartService.updateQuantity(
-                                    cartItem.product.id,
+                                    cartItem.productId,
                                     newQuantity,
                                   );
                                 }
@@ -93,7 +93,7 @@ class CartPage extends StatelessWidget {
                             },
                             onRemove: () async {
                               try {
-                                await cartService.removeFromCart(cartItem.product.id);
+                                await cartService.removeFromCart(cartItem.productId);
                                 if (context.mounted) {
                                   AppNotifications.showSuccess(
                                     context,
@@ -205,123 +205,72 @@ class CartItemCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: CachedNetworkImage(
-                imageUrl: cartItem.product.imageUrl,
+                imageUrl: cartItem.imageUrl,
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[200],
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
                 ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: Icon(Icons.error_outline),
-                  ),
-                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
               ),
             ),
-            const SizedBox(width: 16),
-            // معلومات المنتج
+            const SizedBox(width: 12),
+            // تفاصيل المنتج
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    cartItem.product.name,
+                    cartItem.name,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  if (cartItem.product.discountPrice != null) ...[
-                    Row(
-                      children: [
-                        Text(
-                          '${cartItem.product.discountPrice!.toStringAsFixed(2)} ج.م',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${cartItem.product.price.toStringAsFixed(2)} ج.م',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            decoration: TextDecoration.lineThrough,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                  Text(
+                    '${cartItem.price.toStringAsFixed(2)} ج.م',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
                     ),
-                  ] else
-                    Text(
-                      '${cartItem.product.price.toStringAsFixed(2)} ج.م',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  ),
                   const SizedBox(height: 8),
-                  // عداد الكمية
+                  // التحكم في الكمية
                   Row(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, size: 16),
-                              onPressed: () => onUpdateQuantity(cartItem.quantity - 1),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
-                              ),
-                            ),
-                            Container(
-                              constraints: const BoxConstraints(minWidth: 32),
-                              alignment: Alignment.center,
-                              child: Text(
-                                '${cartItem.quantity}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add, size: 16),
-                              onPressed: () => onUpdateQuantity(cartItem.quantity + 1),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
-                              ),
-                            ),
-                          ],
+                      IconButton(
+                        onPressed: () {
+                          onUpdateQuantity(cartItem.quantity - 1);
+                        },
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: Colors.grey[600],
+                      ),
+                      Text(
+                        '${cartItem.quantity}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Spacer(),
-                      // زر الحذف
                       IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        color: Colors.red,
-                        onPressed: onRemove,
-                        tooltip: 'إزالة من السلة',
+                        onPressed: () {
+                          onUpdateQuantity(cartItem.quantity + 1);
+                        },
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: const Color(0xFF6E58A8),
                       ),
                     ],
                   ),
                 ],
               ),
+            ),
+            // زر الحذف
+            IconButton(
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline),
+              color: Colors.red[400],
             ),
           ],
         ),

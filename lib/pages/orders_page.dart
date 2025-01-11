@@ -4,6 +4,7 @@ import '../providers/app_state.dart';
 import 'package:provider/provider.dart';
 import 'order_details_page.dart';
 import '../enums/order_status.dart';
+import '../enums/payment_method.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -54,7 +55,11 @@ class _OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.read<AppState>();
-    final statusColor = _getStatusColor(order.status);
+    final orderStatus = OrderStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == order.status,
+      orElse: () => OrderStatus.pending,
+    );
+    final statusColor = _getStatusColor(orderStatus);
     final formattedDate = _formatDate(order.createdAt);
     final formattedTime = _formatTime(order.createdAt);
 
@@ -94,7 +99,7 @@ class _OrderCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      _getStatusText(order.status),
+                      _getStatusText(orderStatus),
                       style: TextStyle(
                         color: statusColor,
                         fontWeight: FontWeight.bold,
@@ -105,7 +110,7 @@ class _OrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'طريقة الدفع: ${order.paymentMethod == order_model.PaymentMethod.cash ? 'الدفع عند الاستلام' : 'بطاقة ائتمان'}',
+                'طريقة الدفع: ${order.paymentMethod == PaymentMethod.cash.toString().split('.').last ? 'الدفع عند الاستلام' : 'بطاقة ائتمان'}',
                 style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 4),

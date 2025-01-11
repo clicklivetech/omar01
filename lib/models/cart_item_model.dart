@@ -3,52 +3,72 @@ import 'product_model.dart';
 
 class CartItemModel {
   final String id;
-  final ProductModel product;
+  final String productId;
   final int quantity;
+  final double price;
+  final String name;
+  final String imageUrl;
+
+  double get discountPrice => price * 0.9; // Adding 10% discount
 
   CartItemModel({
     String? id,
-    required this.product,
+    required this.productId,
     required this.quantity,
+    required this.price,
+    required this.name,
+    required this.imageUrl,
   }) : id = id ?? const Uuid().v4();
-
-  CartItemModel copyWith({
-    String? id,
-    ProductModel? product,
-    int? quantity,
-  }) {
-    return CartItemModel(
-      id: id ?? this.id,
-      product: product ?? this.product,
-      quantity: quantity ?? this.quantity,
-    );
-  }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'product': product.toJson(),
+      'product_id': productId,
       'quantity': quantity,
+      'price': price,
+      'name': name,
+      'image_url': imageUrl,
     };
   }
 
-  factory CartItemModel.fromJson(Map<String, dynamic> json, ProductModel product) {
+  factory CartItemModel.fromProduct(ProductModel product, {int quantity = 1}) {
     return CartItemModel(
-      id: json['id'] as String,
-      product: product,
-      quantity: json['quantity'] as int,
+      productId: product.id,
+      quantity: quantity,
+      price: product.finalPrice,
+      name: product.name,
+      imageUrl: product.imageUrl,
     );
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is CartItemModel &&
-        other.id == id &&
-        other.product == product &&
-        other.quantity == quantity;
+  factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    return CartItemModel(
+      id: json['id'] as String?,
+      productId: json['product_id'] as String,
+      quantity: json['quantity'] as int,
+      price: (json['price'] as num).toDouble(),
+      name: json['name'] as String,
+      imageUrl: json['image_url'] as String,
+    );
   }
 
-  @override
-  int get hashCode => Object.hash(id, product, quantity);
+  CartItemModel copyWith({
+    String? id,
+    String? productId,
+    int? quantity,
+    double? price,
+    String? name,
+    String? imageUrl,
+  }) {
+    return CartItemModel(
+      id: id ?? this.id,
+      productId: productId ?? this.productId,
+      quantity: quantity ?? this.quantity,
+      price: price ?? this.price,
+      name: name ?? this.name,
+      imageUrl: imageUrl ?? this.imageUrl,
+    );
+  }
+
+  double get total => price * quantity;
 }

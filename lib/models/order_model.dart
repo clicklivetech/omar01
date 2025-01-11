@@ -1,115 +1,82 @@
+import 'package:uuid/uuid.dart';
+import 'cart_item_model.dart';
 import '../enums/order_status.dart';
-
-enum PaymentMethod { cash, creditCard }
 
 class OrderModel {
   final String id;
   final String userId;
-  final OrderStatus status;
+  final String status;
   final double totalAmount;
   final String shippingAddress;
   final String phone;
   final DateTime createdAt;
   final DateTime updatedAt;
   final double deliveryFee;
-  final PaymentMethod paymentMethod;
+  final String paymentMethod;
   final List<OrderItem> items;
   final DateTime? cancelledAt;
   final String? oldStatus;
 
-  const OrderModel({
-    required this.id,
+  OrderModel({
+    String? id,
     required this.userId,
     required this.status,
     required this.totalAmount,
     required this.shippingAddress,
     required this.phone,
-    required this.createdAt,
-    required this.updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     required this.deliveryFee,
     required this.paymentMethod,
     required this.items,
     this.cancelledAt,
     this.oldStatus,
-  });
+  }) : 
+    id = id ?? const Uuid().v4(),
+    createdAt = createdAt ?? DateTime.now(),
+    updatedAt = updatedAt ?? DateTime.now();
 
-  bool get canBeCancelled => status == OrderStatus.pending;
-
-  factory OrderModel.fromJson(Map<String, dynamic> json) {
-    return OrderModel(
-      id: json['id'],
-      userId: json['user_id'],
-      status: OrderStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => OrderStatus.pending,
-      ),
-      totalAmount: json['total_amount'].toDouble(),
-      shippingAddress: json['shipping_address'],
-      phone: json['phone'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      deliveryFee: json['delivery_fee']?.toDouble() ?? 0.0,
-      paymentMethod: PaymentMethod.values.firstWhere(
-        (e) => e.name == json['payment_method'],
-        orElse: () => PaymentMethod.cash,
-      ),
-      items: (json['items'] as List?)
-          ?.map((item) => OrderItem.fromJson(item))
-          .toList() ?? [],
-      cancelledAt: json['cancelled_at'] != null
-          ? DateTime.parse(json['cancelled_at'])
-          : null,
-      oldStatus: json['old_status'],
+  bool get canBeCancelled {
+    final currentStatus = OrderStatus.values.firstWhere(
+      (e) => e.toString().split('.').last == status,
+      orElse: () => OrderStatus.pending,
     );
+    return currentStatus != OrderStatus.cancelled && 
+           currentStatus != OrderStatus.delivered;
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'user_id': userId,
-      'status': status.name,
+      'status': status,
       'total_amount': totalAmount,
       'shipping_address': shippingAddress,
       'phone': phone,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'delivery_fee': deliveryFee,
-      'payment_method': paymentMethod.name,
-      'items': items.map((item) => item.toJson()).toList(),
+      'payment_method': paymentMethod,
       'cancelled_at': cancelledAt?.toIso8601String(),
       'old_status': oldStatus,
     };
   }
 
-  OrderModel copyWith({
-    String? id,
-    String? userId,
-    OrderStatus? status,
-    double? totalAmount,
-    String? shippingAddress,
-    String? phone,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    double? deliveryFee,
-    PaymentMethod? paymentMethod,
-    List<OrderItem>? items,
-    DateTime? cancelledAt,
-    String? oldStatus,
-  }) {
+  factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
-      id: id ?? this.id,
-      userId: userId ?? this.userId,
-      status: status ?? this.status,
-      totalAmount: totalAmount ?? this.totalAmount,
-      shippingAddress: shippingAddress ?? this.shippingAddress,
-      phone: phone ?? this.phone,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      deliveryFee: deliveryFee ?? this.deliveryFee,
-      paymentMethod: paymentMethod ?? this.paymentMethod,
-      items: items ?? this.items,
-      cancelledAt: cancelledAt ?? this.cancelledAt,
-      oldStatus: oldStatus ?? this.oldStatus,
+      id: json['id'],
+      userId: json['user_id'],
+      status: json['status'],
+      totalAmount: json['total_amount'].toDouble(),
+      shippingAddress: json['shipping_address'],
+      phone: json['phone'],
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deliveryFee: json['delivery_fee'].toDouble(),
+      paymentMethod: json['payment_method'],
+      items: (json['items'] as List).map((item) => OrderItem.fromJson(item)).toList(),
+      cancelledAt: json['cancelled_at'] != null ? DateTime.parse(json['cancelled_at']) : null,
+      oldStatus: json['old_status'],
     );
   }
 }
@@ -122,25 +89,16 @@ class OrderItem {
   final double price;
   final DateTime createdAt;
 
-  const OrderItem({
-    required this.id,
+  OrderItem({
+    String? id,
     required this.orderId,
     required this.productId,
     required this.quantity,
     required this.price,
-    required this.createdAt,
-  });
-
-  factory OrderItem.fromJson(Map<String, dynamic> json) {
-    return OrderItem(
-      id: json['id'],
-      orderId: json['order_id'],
-      productId: json['product_id'],
-      quantity: json['quantity'],
-      price: json['price'].toDouble(),
-      createdAt: DateTime.parse(json['created_at']),
-    );
-  }
+    DateTime? createdAt,
+  }) : 
+    id = id ?? const Uuid().v4(),
+    createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() {
     return {
@@ -153,21 +111,23 @@ class OrderItem {
     };
   }
 
-  OrderItem copyWith({
-    String? id,
-    String? orderId,
-    String? productId,
-    int? quantity,
-    double? price,
-    DateTime? createdAt,
-  }) {
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
-      id: id ?? this.id,
-      orderId: orderId ?? this.orderId,
-      productId: productId ?? this.productId,
-      quantity: quantity ?? this.quantity,
-      price: price ?? this.price,
-      createdAt: createdAt ?? this.createdAt,
+      id: json['id'],
+      orderId: json['order_id'],
+      productId: json['product_id'],
+      quantity: json['quantity'],
+      price: json['price'].toDouble(),
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+
+  factory OrderItem.fromCartItem(CartItemModel cartItem, String orderId) {
+    return OrderItem(
+      orderId: orderId,
+      productId: cartItem.productId,
+      quantity: cartItem.quantity,
+      price: cartItem.price,
     );
   }
 }

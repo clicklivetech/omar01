@@ -45,7 +45,8 @@ class OrderDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('الحالة: ${_getArabicStatus(order.status)}',
+            Text('الحالة: ${_getArabicStatus(OrderStatus.values.firstWhere(
+                (e) => e.toString().split('.').last == order.status))}',
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             const Text('طريقة الدفع: نقداً عند الاستلام',

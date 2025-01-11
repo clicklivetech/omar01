@@ -16,24 +16,20 @@ class CartService extends ChangeNotifier {
     if (cartJson == null) return [];
 
     final List<dynamic> cartList = json.decode(cartJson);
-    final List<CartItemModel> items = [];
-    
-    for (var item in cartList) {
-      // Get the product from your product service or database
-      // This is a placeholder - you need to implement the actual product retrieval
-      final productJson = item['product'] as Map<String, dynamic>;
-      final product = ProductModel.fromJson(productJson);
-      items.add(CartItemModel.fromJson(item, product));
-    }
-    
-    return items;
+    return cartList.map((item) => CartItemModel(
+      id: item['id'],
+      productId: item['product_id'],
+      quantity: item['quantity'],
+      price: item['price'].toDouble(),
+      name: item['name'],
+      imageUrl: item['image_url'],
+    )).toList();
   }
 
   // حساب السعر الإجمالي للسلة
   double get cartTotal {
     return getCartItems().fold(0, (total, item) {
-      final price = item.product.discountPrice ?? item.product.price;
-      return total + (price * item.quantity);
+      return total + (item.price * item.quantity);
     });
   }
 
@@ -46,24 +42,13 @@ class CartService extends ChangeNotifier {
   int getItemQuantity(String productId) {
     final items = getCartItems();
     final item = items.firstWhere(
-      (item) => item.product.id == productId,
+      (item) => item.productId == productId,
       orElse: () => CartItemModel(
-        product: ProductModel(
-          id: productId,
-          name: '',
-          description: '',
-          price: 0,
-          categoryId: '',
-          stockQuantity: 0,
-          imageUrl: '',
-          isFeatured: false,
-          isActive: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          unit: 'piece',
-          dailyDeals: false,
-        ), 
-        quantity: 0
+        productId: productId,
+        quantity: 0,
+        price: 0,
+        name: '',
+        imageUrl: '',
       ),
     );
     return item.quantity;
@@ -79,17 +64,28 @@ class CartService extends ChangeNotifier {
   // إضافة منتج إلى السلة
   Future<void> addToCart(ProductModel product, {int quantity = 1}) async {
     final items = getCartItems();
-    final existingItemIndex = items.indexWhere((item) => item.product.id == product.id);
+    final existingItemIndex = items.indexWhere((item) => item.productId == product.id);
 
     if (existingItemIndex != -1) {
       // تحديث الكمية إذا كان المنتج موجود بالفعل
       final existingItem = items[existingItemIndex];
-      items[existingItemIndex] = existingItem.copyWith(
+      items[existingItemIndex] = CartItemModel(
+        id: existingItem.id,
+        productId: existingItem.productId,
         quantity: existingItem.quantity + quantity,
+        price: product.price,
+        name: product.name,
+        imageUrl: product.imageUrl,
       );
     } else {
       // إضافة منتج جديد
-      items.add(CartItemModel(product: product, quantity: quantity));
+      items.add(CartItemModel(
+        productId: product.id,
+        quantity: quantity,
+        price: product.price,
+        name: product.name,
+        imageUrl: product.imageUrl,
+      ));
     }
 
     await saveCartItems(items);
@@ -99,7 +95,7 @@ class CartService extends ChangeNotifier {
   // إزالة منتج من السلة
   Future<void> removeFromCart(String productId) async {
     final items = getCartItems();
-    items.removeWhere((item) => item.product.id == productId);
+    items.removeWhere((item) => item.productId == productId);
     await saveCartItems(items);
     notifyListeners();
   }
@@ -112,16 +108,24 @@ class CartService extends ChangeNotifier {
     }
 
     final items = getCartItems();
-    final index = items.indexWhere((item) => item.product.id == productId);
+    final index = items.indexWhere((item) => item.productId == productId);
     
     if (index != -1) {
-      items[index] = items[index].copyWith(quantity: quantity);
+      final item = items[index];
+      items[index] = CartItemModel(
+        id: item.id,
+        productId: item.productId,
+        quantity: quantity,
+        price: item.price,
+        name: item.name,
+        imageUrl: item.imageUrl,
+      );
       await saveCartItems(items);
       notifyListeners();
     }
   }
 
-  // تفريغ السلة
+  // مسح السلة
   Future<void> clearCart() async {
     await _prefs.remove(_cartKey);
     notifyListeners();
