@@ -411,96 +411,281 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'ملخص الطلب',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        // عنوان القسم
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF6E58A8).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.shopping_cart_checkout, 
+                color: Color(0xFF6E58A8),
+                size: 24,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'مراجعة الطلب',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6E58A8),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
-        // المنتجات
-        ...cartItems.map((item) => ListTile(
-          leading: SizedBox(
-            width: 60,
-            height: 60,
-            child: Image.network(
-              item.imageUrl,
-              fit: BoxFit.cover,
+
+        // معلومات التوصيل
+        if (appState.defaultAddress != null) ...[
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ),
-          title: Text(item.name),
-          subtitle: Text('الكمية: ${appState.getCartItemQuantity(item.id)}'),
-          trailing: Text(
-            '${item.price * appState.getCartItemQuantity(item.id)} جنيه',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        )),
-        const Divider(),
-        // التفاصيل
-        ListTile(
-          title: const Text('المجموع الفرعي'),
-          trailing: Text('$subtotal جنيه'),
-        ),
-        ListTile(
-          title: const Text('رسوم التوصيل'),
-          trailing: const Text('$shippingFee جنيه'),
-        ),
-        const Divider(),
-        ListTile(
-          title: const Text(
-            'الإجمالي',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          trailing: Text(
-            '$total جنيه',
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        // تفاصيل التوصيل
-        const Text(
-          'عنوان التوصيل',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_nameController.text),
-                Text(_phoneController.text),
-                Text(_addressController.text),
-                if (_notesController.text.isNotEmpty)
-                  Text('ملاحظات: ${_notesController.text}'),
+                Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.grey[600], size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'عنوان التوصيل',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Padding(
+                  padding: EdgeInsets.only(right: 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(appState.defaultAddress!.name),
+                      Text(appState.defaultAddress!.phone),
+                      Text(appState.defaultAddress!.address),
+                      if (appState.defaultAddress!.notes != null && appState.defaultAddress!.notes!.isNotEmpty)
+                        Text(appState.defaultAddress!.notes!),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        // طريقة الدفع
-        const Text(
-          'طريقة الدفع',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+          SizedBox(height: 16),
+        ],
+
+        // المنتجات
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.shopping_bag, color: Colors.grey[600], size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'المنتجات',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    Spacer(),
+                    Text(
+                      '${cartItems.length} منتج',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1),
+              ...cartItems.map((item) => Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        item.imageUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'الكمية: ${appState.getCartItemQuantity(item.id)}',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${item.price * appState.getCartItemQuantity(item.id)} جنيه',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (item.oldPrice != null) 
+                          Text(
+                            '${item.oldPrice} جنيه',
+                            style: TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ],
           ),
         ),
-        const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.money),
-            title: const Text('الدفع عند الاستلام'),
+        SizedBox(height: 16),
+
+        // ملخص الحساب
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'المجموع الفرعي',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  Text(
+                    '$subtotal جنيه',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'رسوم التوصيل',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  Text(
+                    '$shippingFee جنيه',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+              Divider(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'الإجمالي',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    '$total جنيه',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF6E58A8),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+
+        // طريقة الدفع
+        Container(
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Color(0xFF6E58A8).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.payments_outlined,
+                  color: Color(0xFF6E58A8),
+                ),
+              ),
+              SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'الدفع عند الاستلام',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    'ادفع نقداً عند استلام طلبك',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ],
