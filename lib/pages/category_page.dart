@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/category_model.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
@@ -11,6 +12,7 @@ class CategoryPage extends StatefulWidget {
 
 class _CategoryPageState extends State<CategoryPage> {
   List<CategoryModel> categories = [];
+  List<CategoryModel> filteredCategories = [];
   bool isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -26,6 +28,19 @@ class _CategoryPageState extends State<CategoryPage> {
     super.dispose();
   }
 
+  void _filterCategories(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredCategories = List.from(categories);
+      } else {
+        filteredCategories = categories
+            .where((category) =>
+                category.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
   Future<void> _loadCategories() async {
     try {
       final response = await Supabase.instance.client
@@ -37,6 +52,7 @@ class _CategoryPageState extends State<CategoryPage> {
           categories = (response as List<dynamic>)
               .map((data) => CategoryModel.fromJson(data))
               .toList();
+          filteredCategories = List.from(categories);
           isLoading = false;
         });
       }
@@ -52,6 +68,8 @@ class _CategoryPageState extends State<CategoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color(0xFF6E58A8);
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -63,13 +81,13 @@ class _CategoryPageState extends State<CategoryPage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFF6E58A8),
+        backgroundColor: primaryColor,
         elevation: 0,
       ),
       body: Column(
         children: [
           Container(
-            color: const Color(0xFF6E58A8),
+            color: primaryColor,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: TextField(
               controller: _searchController,
@@ -89,9 +107,7 @@ class _CategoryPageState extends State<CategoryPage> {
                   vertical: 12,
                 ),
               ),
-              onChanged: (value) {
-                // TODO: Implement search functionality
-              },
+              onChanged: _filterCategories,
             ),
           ),
           if (isLoading)
@@ -106,32 +122,76 @@ class _CategoryPageState extends State<CategoryPage> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadCategories,
-                color: const Color(0xFF6E58A8),
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(0),
-                  itemCount: categories.length,
+                color: primaryColor,
+                child: ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredCategories.length,
+                  separatorBuilder: (context, index) => const Divider(
+                    height: 16,
+                    thickness: 1,
+                    color: Color(0xFFEEEEEE),
+                  ),
                   itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return ListTile(
-                      leading: const Icon(
-                        Icons.chevron_right,
-                        color: Color(0xFF6E58A8),
+                    final category = filteredCategories[index];
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      title: Text(
-                        category.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: category.imageUrl,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: primaryColor.withOpacity(0.2),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: primaryColor.withOpacity(0.2),
+                              child: const Icon(
+                                Icons.category_outlined,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          category.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          color: primaryColor,
+                          size: 18,
+                        ),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/category-products',
+                            arguments: category,
+                          );
+                        },
                       ),
-                      tileColor: Colors.white,
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/category-products',
-                          arguments: category,
-                        );
-                      },
                     );
                   },
                 ),
