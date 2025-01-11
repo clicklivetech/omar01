@@ -15,6 +15,7 @@ class ProductModel {
   final String? searchVector;
   final bool dailyDeals;
   final double rating;
+  final int quantity;
 
   ProductModel({
     required this.id,
@@ -33,6 +34,7 @@ class ProductModel {
     this.searchVector,
     required this.dailyDeals,
     this.rating = 0.0,
+    this.quantity = 1,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +57,7 @@ class ProductModel {
       searchVector: json['search_vector'],
       dailyDeals: json['daily_deals'] ?? false,
       rating: json['rating'] != null ? double.parse(json['rating'].toString()) : 0.0,
+      quantity: json['quantity'] ?? 1,
     );
   }
 
@@ -76,6 +79,7 @@ class ProductModel {
       'search_vector': searchVector,
       'daily_deals': dailyDeals,
       'rating': rating,
+      'quantity': quantity,
     };
   }
 
@@ -96,6 +100,7 @@ class ProductModel {
     String? searchVector,
     bool? dailyDeals,
     double? rating,
+    int? quantity,
   }) {
     return ProductModel(
       id: id ?? this.id,
@@ -114,6 +119,7 @@ class ProductModel {
       searchVector: searchVector ?? this.searchVector,
       dailyDeals: dailyDeals ?? this.dailyDeals,
       rating: rating ?? this.rating,
+      quantity: quantity ?? this.quantity,
     );
   }
 
@@ -128,6 +134,6 @@ class ProductModel {
 
   @override
   String toString() {
-    return 'ProductModel(id: $id, name: $name, price: $price, discountPrice: $discountPrice, categoryId: $categoryId, stockQuantity: $stockQuantity, isFeatured: $isFeatured, isActive: $isActive, unit: $unit, dailyDeals: $dailyDeals, rating: $rating)';
+    return 'ProductModel(id: $id, name: $name, price: $price, discountPrice: $discountPrice, categoryId: $categoryId, stockQuantity: $stockQuantity, isFeatured: $isFeatured, isActive: $isActive, unit: $unit, dailyDeals: $dailyDeals, rating: $rating, quantity: $quantity)';
   }
 }

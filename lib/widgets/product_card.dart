@@ -61,16 +61,33 @@ class ProductCard extends StatelessWidget {
                       child: CachedNetworkImage(
                         imageUrl: product.imageUrl,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: CircularProgressIndicator(),
+                        memCacheWidth: 300,
+                        memCacheHeight: 300,
+                        fadeInDuration: const Duration(milliseconds: 300),
+                        placeholder: (context, url) => const DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFEEEEEE),
+                          ),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.0,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF6E58A8)),
+                              ),
+                            ),
                           ),
                         ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[200],
-                          child: const Center(
-                            child: Icon(Icons.error_outline),
+                        errorWidget: (context, url, error) => const DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Color(0xFFEEEEEE),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.error_outline,
+                              color: Color(0xFF6E58A8),
+                            ),
                           ),
                         ),
                       ),
@@ -184,63 +201,29 @@ class ProductCard extends StatelessWidget {
                         ],
                       ),
                       const Spacer(),
-                      // عداد الكمية وزر الطلب
-                      Row(
-                        children: [
-                          // عداد الكمية
-                          Expanded(
-                            child: Container(
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
+                      // زر سلة التسوق التفاعلي
+                      Container(
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: quantity > 0 
+                              ? Colors.grey[100]
+                              : Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: quantity > 0
+                            ? Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.remove, size: 16),
-                                    onPressed: quantity > 0
-                                        ? () async {
-                                            try {
-                                              if (quantity == 1) {
-                                                await cartService.removeFromCart(product.id);
-                                              } else {
-                                                await cartService.updateQuantity(
-                                                  product.id,
-                                                  quantity - 1,
-                                                );
-                                              }
-                                            } catch (e) {
-                                              if (context.mounted) {
-                                                AppNotifications.showError(
-                                                  context,
-                                                  'حدث خطأ أثناء تحديث الكمية',
-                                                );
-                                              }
-                                            }
-                                          }
-                                        : null,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                  Text(
-                                    '$quantity',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 16),
                                     onPressed: () async {
                                       try {
-                                        if (quantity == 0) {
-                                          await cartService.addToCart(product);
+                                        if (quantity == 1) {
+                                          await cartService.removeFromCart(product.id);
                                         } else {
                                           await cartService.updateQuantity(
                                             product.id,
-                                            quantity + 1,
+                                            quantity - 1,
                                           );
                                         }
                                       } catch (e) {
@@ -255,49 +238,60 @@ class ProductCard extends StatelessWidget {
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
+                                  Text(
+                                    '$quantity',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add, size: 16),
+                                    onPressed: () async {
+                                      try {
+                                        await cartService.updateQuantity(
+                                          product.id,
+                                          quantity + 1,
+                                        );
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          AppNotifications.showError(
+                                            context,
+                                            'حدث خطأ أثناء تحديث الكمية',
+                                          );
+                                        }
+                                      }
+                                    },
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
                                 ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // زر الطلب
-                          Container(
-                            height: 36,
-                            width: 36,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.shopping_cart_outlined,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              onPressed: () async {
-                                try {
-                                  if (quantity == 0) {
-                                    await cartService.addToCart(product);
+                              )
+                            : IconButton(
+                                icon: const Icon(
+                                  Icons.add_shopping_cart,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: () async {
+                                  try {
+                                    await cartService.addToCart(product, quantity: 1);
                                     if (context.mounted) {
                                       AppNotifications.showSuccess(
                                         context,
                                         'تم إضافة المنتج إلى السلة',
                                       );
                                     }
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      AppNotifications.showError(
+                                        context,
+                                        'حدث خطأ أثناء الإضافة إلى السلة',
+                                      );
+                                    }
                                   }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    AppNotifications.showError(
-                                      context,
-                                      'حدث خطأ أثناء إضافة المنتج',
-                                    );
-                                  }
-                                }
-                              },
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ],
+                                },
+                              ),
                       ),
                     ],
                   ),

@@ -3,6 +3,8 @@ import '../models/product_model.dart';
 import '../models/category_model.dart';
 import '../models/banner.dart' as app_banner;
 import '../services/logger_service.dart';
+import '../models/order_model.dart';
+import '../enums/order_status.dart';
 
 class SupabaseService {
   static final client = SupabaseClient(
@@ -203,6 +205,101 @@ class SupabaseService {
     } catch (e) {
       LoggerService.error('Error signing out: $e');
       rethrow;
+    }
+  }
+
+  // تحديث حالة الطلب
+  static Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+    try {
+      await client
+          .from('orders')
+          .update({
+            'status': newStatus.name,
+            'updated_at': DateTime.now().toIso8601String(),
+            'cancelled_at': newStatus == OrderStatus.cancelled ? DateTime.now().toIso8601String() : null,
+          })
+          .eq('id', orderId);
+      
+      LoggerService.info('Order status updated successfully: $orderId to ${newStatus.name}');
+    } catch (e) {
+      LoggerService.error('Error updating order status: $e');
+      rethrow;
+    }
+  }
+
+  // إلغاء الطلب
+  static Future<void> cancelOrder(String orderId) async {
+    try {
+      await client
+          .from('orders')
+          .update({
+            'status': OrderStatus.cancelled.name,
+            'updated_at': DateTime.now().toIso8601String(),
+            'cancelled_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', orderId);
+      
+      LoggerService.info('Order cancelled successfully: $orderId');
+    } catch (e) {
+      LoggerService.error('Error cancelling order: $e');
+      rethrow;
+    }
+  }
+
+  // الحصول على تفاصيل الطلب
+  static Future<OrderModel?> getOrderDetails(String orderId) async {
+    try {
+      // الحصول على بيانات الطلب
+      final orderResponse = await client
+          .from('orders')
+          .select()
+          .eq('id', orderId)
+          .single();
+
+      // الحصول على عناصر الطلب
+      final itemsResponse = await client
+          .from('order_items')
+          .select('*, products(*)')  // اختيار كل البيانات من order_items وبيانات المنتجات المرتبطة
+          .eq('order_id', orderId);
+
+      // تحويل البيانات إلى نموذج OrderModel
+      final List<OrderItem> items = (itemsResponse as List).map((item) {
+        return OrderItem(
+          id: item['id'],
+          orderId: item['order_id'],
+          productId: item['product_id'],
+          quantity: item['quantity'],
+          price: item['price'].toDouble(),
+          createdAt: DateTime.parse(item['created_at']),
+        );
+      }).toList();
+
+      return OrderModel(
+        id: orderResponse['id'],
+        userId: orderResponse['user_id'],
+        status: OrderStatus.values.firstWhere(
+          (e) => e.name == orderResponse['status'],
+          orElse: () => OrderStatus.pending,
+        ),
+        totalAmount: orderResponse['total_amount'].toDouble(),
+        shippingAddress: orderResponse['shipping_address'],
+        phone: orderResponse['phone'],
+        createdAt: DateTime.parse(orderResponse['created_at']),
+        updatedAt: DateTime.parse(orderResponse['updated_at']),
+        deliveryFee: orderResponse['delivery_fee']?.toDouble() ?? 0.0,
+        paymentMethod: PaymentMethod.values.firstWhere(
+          (e) => e.name == orderResponse['payment_method'],
+          orElse: () => PaymentMethod.cashOnDelivery,
+        ),
+        items: items,
+        cancelledAt: orderResponse['cancelled_at'] != null
+            ? DateTime.parse(orderResponse['cancelled_at'])
+            : null,
+        oldStatus: orderResponse['old_status'],
+      );
+    } catch (e) {
+      LoggerService.error('Error getting order details: $e');
+      return null;
     }
   }
 }

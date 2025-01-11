@@ -163,70 +163,73 @@ class ProductDetailsPage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // عداد الكمية
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove, size: 20),
-                        onPressed: quantity > 0
-                            ? () {
-                                if (quantity == 1) {
-                                  appState.removeFromCart(product.id);
-                                } else {
-                                  appState.updateCartItemQuantity(product.id, quantity - 1);
-                                }
-                              }
-                            : null,
-                      ),
-                      Text(
-                        '$quantity',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add, size: 20),
-                        onPressed: () {
-                          if (quantity == 0) {
-                            appState.addToCart(product);
-                          } else {
-                            appState.updateCartItemQuantity(product.id, quantity + 1);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // زر إضافة إلى السلة
+                // عداد الكمية أو زر الإضافة
                 Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6E58A8),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: quantity == 0 ? () {
-                      appState.addToCart(product);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('تمت الإضافة إلى السلة'),
-                          duration: Duration(seconds: 2),
+                  child: quantity > 0
+                      ? Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove),
+                                onPressed: () {
+                                  if (quantity == 1) {
+                                    appState.removeFromCart(product.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('تم إزالة المنتج من السلة'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  } else {
+                                    appState.updateCartItemQuantity(product.id, quantity - 1);
+                                  }
+                                },
+                              ),
+                              Text(
+                                '$quantity',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add),
+                                onPressed: product.stockQuantity > quantity
+                                    ? () {
+                                        appState.updateCartItemQuantity(product.id, quantity + 1);
+                                      }
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: () {
+                            appState.addToCart(product);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('تم إضافة المنتج إلى السلة'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.add_shopping_cart),
+                          label: const Text('إضافة إلى السلة'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
-                      );
-                    } : null,
-                    child: Text(
-                      quantity == 0 ? 'أضف إلى السلة' : 'في السلة',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
                 ),
               ],
             ),

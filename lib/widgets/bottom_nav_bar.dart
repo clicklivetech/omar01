@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/cart_service.dart';
-import '../services/favorites_service.dart';
+import '../providers/app_state.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -15,9 +14,6 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cartService = context.watch<CartService>();
-    final favoritesService = context.watch<FavoritesService>();
-
     return BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: onTap,
@@ -35,18 +31,14 @@ class BottomNavBar extends StatelessWidget {
         ),
         BottomNavigationBarItem(
           icon: Badge(
-            label: Text(cartService.itemCount.toString()),
-            isLabelVisible: cartService.itemCount > 0,
+            label: Text(context.watch<AppState>().cartItemsCount.toString()),
+            isLabelVisible: context.watch<AppState>().cartItemsCount > 0,
             child: const Icon(Icons.shopping_cart),
           ),
           label: 'السلة',
         ),
-        BottomNavigationBarItem(
-          icon: Badge(
-            label: Text(favoritesService.getFavoritesCount().toString()),
-            isLabelVisible: favoritesService.getFavoritesCount() > 0,
-            child: const Icon(Icons.favorite),
-          ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.favorite),
           label: 'المفضلة',
         ),
         const BottomNavigationBarItem(

@@ -4,6 +4,7 @@ import '../services/cart_service.dart';
 import '../models/cart_item_model.dart';
 import '../utils/notifications.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'checkout_page.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -20,138 +21,158 @@ class CartPage extends StatelessWidget {
         builder: (context, cartService, child) {
           final cartItems = cartService.getCartItems();
           
-          if (cartItems.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 100,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'السلة فارغة',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
           return Column(
             children: [
               Expanded(
-                child: ListView.builder(
-                  itemCount: cartItems.length,
-                  itemBuilder: (context, index) {
-                    final cartItem = cartItems[index];
-                    return CartItemCard(
-                      cartItem: cartItem,
-                      onUpdateQuantity: (newQuantity) async {
-                        try {
-                          if (newQuantity <= 0) {
-                            await cartService.removeFromCart(cartItem.product.id);
-                            if (context.mounted) {
-                              AppNotifications.showSuccess(
-                                context,
-                                'تم إزالة المنتج من السلة',
-                              );
-                            }
-                          } else {
-                            await cartService.updateQuantity(
-                              cartItem.product.id,
-                              newQuantity,
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            AppNotifications.showError(
-                              context,
-                              'حدث خطأ أثناء تحديث الكمية',
-                            );
-                          }
-                        }
-                      },
-                      onRemove: () async {
-                        try {
-                          await cartService.removeFromCart(cartItem.product.id);
-                          if (context.mounted) {
-                            AppNotifications.showSuccess(
-                              context,
-                              'تم إزالة المنتج من السلة',
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            AppNotifications.showError(
-                              context,
-                              'حدث خطأ أثناء إزالة المنتج',
-                            );
-                          }
-                        }
-                      },
-                    );
-                  },
-                ),
+                child: cartItems.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.shopping_cart_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'سلة التسوق فارغة',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                              ),
+                              child: const Text('تسوق الآن'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: cartItems.length,
+                        itemBuilder: (context, index) {
+                          final cartItem = cartItems[index];
+                          return CartItemCard(
+                            cartItem: cartItem,
+                            onUpdateQuantity: (newQuantity) async {
+                              try {
+                                if (newQuantity <= 0) {
+                                  await cartService.removeFromCart(cartItem.product.id);
+                                  if (context.mounted) {
+                                    AppNotifications.showSuccess(
+                                      context,
+                                      'تم إزالة المنتج من السلة',
+                                    );
+                                  }
+                                } else {
+                                  await cartService.updateQuantity(
+                                    cartItem.product.id,
+                                    newQuantity,
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  AppNotifications.showError(
+                                    context,
+                                    'حدث خطأ أثناء تحديث الكمية',
+                                  );
+                                }
+                              }
+                            },
+                            onRemove: () async {
+                              try {
+                                await cartService.removeFromCart(cartItem.product.id);
+                                if (context.mounted) {
+                                  AppNotifications.showSuccess(
+                                    context,
+                                    'تم إزالة المنتج من السلة',
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  AppNotifications.showError(
+                                    context,
+                                    'حدث خطأ أثناء إزالة المنتج',
+                                  );
+                                }
+                              }
+                            },
+                          );
+                        },
+                      ),
               ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, -3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'المجموع:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+              if (cartItems.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 5,
+                        offset: const Offset(0, -3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'المجموع:',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '${cartService.cartTotal.toStringAsFixed(2)} ج.م',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
+                          Text(
+                            '${cartService.cartTotal.toStringAsFixed(2)} ج.م',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF6E58A8),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CheckoutPage(),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6E58A8),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        onPressed: () {
-                          // TODO: Implement checkout
-                        },
-                        child: const Text('اتمام الشراء'),
+                        child: const Text(
+                          'متابعة الشراء',
+                          style: TextStyle(fontSize: 18),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
             ],
           );
         },
