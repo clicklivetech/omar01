@@ -330,7 +330,7 @@ class SupabaseService {
 
   // إنشاء طلب جديد
   static Future<String> createOrder({
-    String? userId,  
+    String? userId,
     required String shippingAddress,
     required String phone,
     required double totalAmount,
@@ -338,28 +338,47 @@ class SupabaseService {
     required List<CartItemModel> items,
   }) async {
     try {
-      final order = {
+      // 1. إنشاء الطلب الرئيسي
+      final orderData = {
         'user_id': userId,
-        'status': OrderStatus.pending.name,
         'total_amount': totalAmount,
         'shipping_address': shippingAddress,
         'phone': phone,
         'delivery_fee': deliveryFee,
-        'payment_method': 'cash',
-        'items': items.map((item) => item.toJson()).toList(),
+        'payment_method': PaymentMethod.cash.toString().split('.').last,
+        'delivery_address': {
+          'address': shippingAddress,
+          'phone': phone,
+        },
+        'status': OrderStatus.pending.toString().split('.').last,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
       };
 
-      final response = await client
+      final orderResponse = await client
           .from('orders')
-          .insert(order)
+          .insert(orderData)
           .select()
           .single();
 
-      final orderId = response['id'] as String;
-      LoggerService.info('Order created successfully: $orderId');
+      final orderId = orderResponse['id'] as String;
+
+      // 2. إنشاء تفاصيل الطلب
+      final orderItems = items.map((item) => {
+        'order_id': orderId,
+        'product_id': item.productId,
+        'quantity': item.quantity,
+        'price': item.price,
+        'created_at': DateTime.now().toIso8601String(),
+      }).toList();
+
+      await client
+          .from('order_items')
+          .insert(orderItems);
+
       return orderId;
-    } catch (e) {
-      LoggerService.error('Error creating order: $e');
+    } catch (e, stackTrace) {
+      LoggerService.error('Error creating order: $e\n$stackTrace');
       rethrow;
     }
   }
