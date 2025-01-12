@@ -1,19 +1,6 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -32,15 +19,6 @@
   <title>عمر ماركت</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Supabase Cache Configuration -->
-  <script>
-    window.SUPABASE_CACHE_OPTIONS = {
-      cacheTime: 300000, // 5 minutes
-      retryTime: 3000,   // 3 seconds
-      maxRetries: 3
-    };
-  </script>
-
   <script>
     // The value below is injected by flutter build, do not touch.
     var serviceWorkerVersion = null;
@@ -48,33 +26,40 @@
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
   <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background-color: #ffffff;
+    }
+
     .loading {
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
+      height: 100vh;
+      width: 100vw;
     }
     
-    .loader {
-      border: 8px solid #f3f3f3;
+    .loading-content {
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #6E58A8;
       border-radius: 50%;
-      border-top: 8px solid #6E58A8;
-      width: 60px;
-      height: 60px;
-      -webkit-animation: spin 1s linear infinite;
       animation: spin 1s linear infinite;
     }
-    
-    @-webkit-keyframes spin {
-      0% { -webkit-transform: rotate(0deg); }
-      100% { -webkit-transform: rotate(360deg); }
+
+    .loading-text {
+      margin-top: 16px;
+      font-family: Arial, sans-serif;
+      font-size: 18px;
+      color: #6E58A8;
     }
-    
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -83,27 +68,32 @@
 </head>
 <body>
   <div id="loading" class="loading">
-    <div class="loader"></div>
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">جاري التحميل...</p>
+    </div>
   </div>
+
   <script>
     window.addEventListener('load', function(ev) {
-      var loading = document.querySelector('#loading');
       // Download main.dart.js
       _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
         },
-        onEntrypointLoaded: async function(engineInitializer) {
-          loading.textContent = 'جاري التحميل...';
-          const appRunner = await engineInitializer.initializeEngine({
-            hostElement: document.querySelector('#flutter_app'),
-            renderer: 'html',  // Use HTML renderer for better performance
-            useColorEmoji: true,
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            appRunner.runApp();
           });
-          loading.remove();
-          await appRunner.runApp();
         }
       });
+    });
+
+    window.addEventListener('flutter-first-frame', function() {
+      var loadingIndicator = document.getElementById('loading');
+      if (loadingIndicator) {
+        loadingIndicator.remove();
+      }
     });
   </script>
   <div id="flutter_app"></div>

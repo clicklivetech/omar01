@@ -22,7 +22,7 @@ class ProductCardShimmer extends StatelessWidget {
               height: 150,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               ),
             ),
             Padding(
