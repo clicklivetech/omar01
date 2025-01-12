@@ -15,15 +15,20 @@ class CartService extends ChangeNotifier {
     final String? cartJson = _prefs.getString(_cartKey);
     if (cartJson == null) return [];
 
-    final List<dynamic> cartList = json.decode(cartJson);
-    return cartList.map((item) => CartItemModel(
-      id: item['id'] as String?,
-      productId: (item['productId'] ?? '') as String,
-      quantity: (item['quantity'] ?? 0) as int,
-      price: (item['price'] ?? 0.0).toDouble(),
-      name: (item['name'] ?? '') as String,
-      imageUrl: (item['imageUrl'] ?? '') as String,
-    )).toList();
+    try {
+      final List<dynamic> cartList = json.decode(cartJson);
+      return cartList.map((item) => CartItemModel(
+        productId: item['productId'] as String,
+        quantity: (item['quantity'] ?? 1) as int,
+        price: (item['price'] ?? 0.0).toDouble(),
+        name: item['name'] as String,
+        imageUrl: item['imageUrl'] as String,
+      )).toList();
+    } catch (e) {
+      // في حالة حدوث خطأ، نقوم بمسح السلة وإرجاع قائمة فارغة
+      _prefs.remove(_cartKey);
+      return [];
+    }
   }
 
   // حساب السعر الإجمالي للسلة
@@ -65,15 +70,15 @@ class CartService extends ChangeNotifier {
   Future<void> addToCart(ProductModel product, {int quantity = 1}) async {
     final items = getCartItems();
     final existingItemIndex = items.indexWhere((item) => item.productId == product.id);
+    final price = product.discountPrice ?? product.price;
 
     if (existingItemIndex != -1) {
       // تحديث الكمية إذا كان المنتج موجود بالفعل
       final existingItem = items[existingItemIndex];
       items[existingItemIndex] = CartItemModel(
-        id: existingItem.id,
         productId: existingItem.productId,
         quantity: existingItem.quantity + quantity,
-        price: product.price,
+        price: price,
         name: product.name,
         imageUrl: product.imageUrl,
       );
@@ -82,7 +87,7 @@ class CartService extends ChangeNotifier {
       items.add(CartItemModel(
         productId: product.id,
         quantity: quantity,
-        price: product.price,
+        price: price,
         name: product.name,
         imageUrl: product.imageUrl,
       ));

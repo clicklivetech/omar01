@@ -1,12 +1,12 @@
 class CartItem {
-  final String id;
+  final String productId;
   final int quantity;
   final double price;
   final String name;
   final String imageUrl;
 
   const CartItem({
-    required this.id,
+    required this.productId,
     this.quantity = 1,
     required this.price,
     required this.name,
@@ -15,7 +15,7 @@ class CartItem {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'productId': productId,
       'quantity': quantity,
       'price': price,
       'name': name,
@@ -25,7 +25,7 @@ class CartItem {
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      id: json['id'],
+      productId: json['productId'],
       quantity: json['quantity'] ?? 1,
       price: json['price'],
       name: json['name'],
@@ -34,18 +34,20 @@ class CartItem {
   }
 
   CartItem copyWith({
-    String? id,
+    String? productId,
     int? quantity,
     double? price,
     String? name,
     String? imageUrl,
   }) {
     return CartItem(
-      id: id ?? this.id,
+      productId: productId ?? this.productId,
       quantity: quantity ?? this.quantity,
       price: price ?? this.price,
       name: name ?? this.name,
       imageUrl: imageUrl ?? this.imageUrl,
     );
   }
+
+  double get total => price * quantity;
 }

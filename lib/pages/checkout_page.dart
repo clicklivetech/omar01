@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../providers/app_state.dart';
+import '../services/cart_service.dart';
 import 'package:provider/provider.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -310,35 +311,59 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'طريقة الدفع',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF6E58A8).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Row(
+            children: [
+              Icon(
+                Icons.payment,
+                color: Color(0xFF6E58A8),
+                size: 24,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'اختر طريقة الدفع',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6E58A8),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(16),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
+                DecoratedBox(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6E58A8).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Color(0x1A6E58A8),
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
                   ),
-                  child: const Icon(
-                    Icons.money,
-                    color: Color(0xFF6E58A8),
+                  child: Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.money,
+                      color: Color(0xFF6E58A8),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         'الدفع عند الاستلام',
                         style: TextStyle(
@@ -369,28 +394,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.grey),
+                    Icon(Icons.info_outline, color: Colors.amber),
                     SizedBox(width: 8),
                     Text(
-                      'معلومات مهمة',
+                      'ملاحظات هامة',
                       style: TextStyle(
-                        fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                   ],
                 ),
                 SizedBox(height: 8),
                 Text(
-                  '• يرجى تجهيز المبلغ المطلوب عند التوصيل',
+                  '• يرجى تجهيز المبلغ المطلوب نقداً عند التسليم',
                   style: TextStyle(color: Colors.grey),
                 ),
                 Text(
                   '• سيتم التحقق من المنتجات قبل الدفع',
-                  style: TextStyle(color: Colors.grey),
-                ),
-                Text(
-                  '• يمكنك إلغاء الطلب في حال عدم رضاك عن المنتجات',
                   style: TextStyle(color: Colors.grey),
                 ),
               ],
@@ -402,44 +423,37 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Widget _buildOrderSummary() {
-    final appState = context.watch<AppState>();
-    final cartItems = appState.cartItems;
-    final subtotal = appState.cartTotal;
-    final shippingFee = 30.0; // رسوم التوصيل الثابتة
-    final total = subtotal + shippingFee;
+    final cartItems = context.watch<CartService>().getCartItems();
+    final subtotal = context.watch<CartService>().cartTotal;
+    const deliveryFee = 30.0;
+    final total = subtotal + deliveryFee;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // عنوان القسم
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF6E58A8).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.shopping_cart_checkout, 
-                color: Color(0xFF6E58A8),
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'مراجعة الطلب',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF6E58A8),
+        const Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.shopping_cart_outlined, color: Color(0xFF6E58A8)),
+                SizedBox(width: 12),
+                Text(
+                  'ملخص الطلب',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF424242),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 16),
 
         // معلومات التوصيل
-        if (appState.defaultAddress != null) ...[
+        if (context.watch<AppState>().defaultAddress != null) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -449,11 +463,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   children: [
-                    const Icon(Icons.location_on, color: Color(0xFF757575), size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
+                    Icon(Icons.location_on, color: Color(0xFF757575), size: 20),
+                    SizedBox(width: 8),
+                    Text(
                       'عنوان التوصيل',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -468,11 +482,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(appState.defaultAddress!.name),
-                      Text(appState.defaultAddress!.phone),
-                      Text(appState.defaultAddress!.address),
-                      if (appState.defaultAddress!.notes != null && appState.defaultAddress!.notes!.isNotEmpty)
-                        Text(appState.defaultAddress!.notes!),
+                      Text(context.watch<AppState>().defaultAddress!.name),
+                      Text(context.watch<AppState>().defaultAddress!.phone),
+                      Text(context.watch<AppState>().defaultAddress!.address),
+                      if (context.watch<AppState>().defaultAddress!.notes != null && 
+                          context.watch<AppState>().defaultAddress!.notes!.isNotEmpty)
+                        Text(context.watch<AppState>().defaultAddress!.notes!),
                     ],
                   ),
                 ),
@@ -482,126 +497,75 @@ class _CheckoutPageState extends State<CheckoutPage> {
           const SizedBox(height: 16),
         ],
 
-        // المنتجات
-        Container(
+        // تفاصيل المنتجات
+        ...cartItems.map((item) => Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: Colors.grey.shade200),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Column(
+          child: Row(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  item.imageUrl,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.shopping_bag, color: Color(0xFF757575), size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'المنتجات',
-                      style: TextStyle(
+                    Text(
+                      item.name,
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 4),
                     Text(
-                      '${cartItems.length} منتج',
-                      style: const TextStyle(color: Color(0xFF757575)),
+                      '${item.quantity} × ${item.price.toStringAsFixed(2)} جنيه',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1),
-              ...cartItems.map((item) => Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Colors.grey.shade200,
-                      width: 1,
-                    ),
-                  ),
+              Text(
+                '${(item.price * item.quantity).toStringAsFixed(2)} جنيه',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6E58A8),
                 ),
-                child: Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        item.imageUrl,
-                        width: 60,
-                        height: 60,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'الكمية: ${item.quantity}',
-                            style: const TextStyle(
-                              color: Color(0xFF757575),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${(item.price * item.quantity).toStringAsFixed(2)} جنيه',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (item.discountPrice != 0) 
-                          Text(
-                            '${item.discountPrice.toStringAsFixed(2)} جنيه',
-                            style: const TextStyle(
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              )).toList(),
+              ),
             ],
           ),
-        ),
+        )).toList(),
+
         const SizedBox(height: 16),
 
-        // ملخص الحساب
+        // ملخص السعر
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.grey.shade50,
-            border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
             children: [
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'المجموع الفرعي',
-                    style: TextStyle(color: Color(0xFF757575)),
-                  ),
                   Text(
-                    '${subtotal.toStringAsFixed(2)} جنيه',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    'المجموع الفرعي',
+                    style: TextStyle(color: Colors.grey),
                   ),
                 ],
               ),
@@ -611,11 +575,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 children: [
                   const Text(
                     'رسوم التوصيل',
-                    style: TextStyle(color: Color(0xFF757575)),
+                    style: TextStyle(color: Colors.grey),
                   ),
                   Text(
-                    '${shippingFee.toStringAsFixed(2)} جنيه',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    subtotal > 500 ? 'مجاناً' : '${deliveryFee.toStringAsFixed(2)} جنيه',
+                    style: TextStyle(
+                      color: subtotal > 500 ? Colors.green : null,
+                      fontWeight: subtotal > 500 ? FontWeight.bold : null,
+                    ),
                   ),
                 ],
               ),
@@ -643,50 +610,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-
-        // طريقة الدفع
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6E58A8).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.payments_outlined,
-                  color: Color(0xFF6E58A8),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'الدفع عند الاستلام',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Text(
-                    'ادفع نقداً عند استلام طلبك',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -694,53 +617,86 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _submitOrder() async {
     if (!_validateAddressStep()) return;
 
-    final currentContext = context;
-    
     if (!mounted) return;
+    BuildContext currentContext = context;
     
+    final cartService = Provider.of<CartService>(currentContext, listen: false);
+    if (cartService.getCartItems().isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('السلة فارغة'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // عرض مؤشر التحميل
     if (!mounted) return;
-    showDialog(
-      context: currentContext,
+    await showDialog(
+      context: context,
       barrierDismissible: false,
       builder: (context) => const Center(
         child: CircularProgressIndicator(),
       ),
     );
 
+    if (!mounted) return;
+    currentContext = context;
     final appState = Provider.of<AppState>(currentContext, listen: false);
     
     try {
+      // حساب رسوم التوصيل بناءً على المجموع
+      final subtotal = cartService.cartTotal;
+      final deliveryFee = subtotal > 500 ? 0.0 : 30.0;  // مجاني للطلبات أكثر من 500 جنيه
+
       // إنشاء الطلب
       final orderId = await appState.createOrder(
         shippingAddress: _addressController.text,
         phone: _phoneController.text,
-        deliveryFee: 30.0,
+        deliveryFee: deliveryFee,
       );
 
       if (!mounted) return;
-      // إغلاق مؤشر التحميل
-      Navigator.of(currentContext).pop();
+      currentContext = context;
+
+      // مسح السلة بعد إتمام الطلب بنجاح
+      await cartService.clearCart();
 
       if (!mounted) return;
       // عرض رسالة النجاح مع رقم الطلب
-      if (!mounted) return;
       await showDialog(
-        context: currentContext,
-        builder: (context) => AlertDialog(
-          title: Row(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Row(
             children: [
               Icon(Icons.check_circle, color: Colors.green),
               SizedBox(width: 8),
               Text('تم إنشاء الطلب بنجاح'),
             ],
           ),
-          content: Text('رقم الطلب: $orderId'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('رقم الطلب: $orderId'),
+              const SizedBox(height: 8),
+              Text(
+                deliveryFee == 0 
+                  ? 'التوصيل مجاني!'
+                  : 'رسوم التوصيل: ${deliveryFee.toStringAsFixed(2)} جنيه',
+                style: const TextStyle(color: Colors.green),
+              ),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(currentContext).pop();
+                Navigator.of(dialogContext).pop();
+                if (mounted) {
+                  Navigator.of(context).pop();
+                }
               },
               child: const Text('حسناً'),
             ),
@@ -749,14 +705,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      // إغلاق مؤشر التحميل إذا كان مفتوحاً
-      Navigator.of(currentContext).pop();
+      currentContext = context;
       
-      if (!mounted) return;
       // عرض رسالة الخطأ
-      ScaffoldMessenger.of(currentContext).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('حدث خطأ أثناء إنشاء الطلب'),
+          content: Text('حدث خطأ أثناء إنشاء الطلب: $e'),
           backgroundColor: Colors.red,
         ),
       );
