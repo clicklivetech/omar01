@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'services/cart_service.dart';
 import 'services/favorites_service.dart';
 import 'pages/main_layout.dart';
@@ -9,8 +10,11 @@ import 'pages/category_products_page.dart';
 import 'providers/app_state.dart';
 import 'models/category_model.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configure web-specific settings
+  setUrlStrategy(PathUrlStrategy());
   
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
@@ -30,9 +34,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) {
             final appState = AppState();
-            appState.addDummyProducts(); // إضافة بيانات تجريبية
+            // Initialize products immediately
+            appState.addDummyProducts();
             return appState;
-          }
+          },
         ),
         ChangeNotifierProvider<CartService>(
           create: (context) => CartService(prefs)
@@ -43,6 +48,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'عمر ماركت',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF6E58A8),

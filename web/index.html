@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html dir="rtl" lang="ar">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -15,11 +15,11 @@
     the `--base-href` argument provided to `flutter build`.
   -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="عمر ماركت - متجر إلكتروني">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -43,30 +43,64 @@
 
   <script>
     // The value below is injected by flutter build, do not touch.
-    var serviceWorkerVersion = '{{flutter_service_worker_version}}';
+    var serviceWorkerVersion = null;
   </script>
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
+  <style>
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+    
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 8px solid #6E58A8;
+      width: 60px;
+      height: 60px;
+      -webkit-animation: spin 1s linear infinite;
+      animation: spin 1s linear infinite;
+    }
+    
+    @-webkit-keyframes spin {
+      0% { -webkit-transform: rotate(0deg); }
+      100% { -webkit-transform: rotate(360deg); }
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <div id="loading" class="loading">
+    <div class="loader"></div>
+  </div>
   <script>
     window.addEventListener('load', function(ev) {
+      var loading = document.querySelector('#loading');
       // Download main.dart.js
       _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
         },
         onEntrypointLoaded: async function(engineInitializer) {
-          // Custom error handling
-          window.onerror = function(message, source, lineno, colno, error) {
-            console.error('Flutter Web Error:', {message, source, lineno, colno, error});
-            return false;
-          };
-
+          loading.textContent = 'جاري التحميل...';
           const appRunner = await engineInitializer.initializeEngine({
             hostElement: document.querySelector('#flutter_app'),
-            renderer: 'html'  // Use HTML renderer for better performance
+            renderer: 'html',  // Use HTML renderer for better performance
+            useColorEmoji: true,
           });
+          loading.remove();
           await appRunner.runApp();
         }
       });

@@ -256,24 +256,59 @@ class AppState with ChangeNotifier {
   
   // إضافة منتجات للتجربة
   void addDummyProducts() {
-    final dummyProduct = ProductModel(
-      id: "1",
-      name: "منتج تجريبي",
-      description: "وصف المنتج التجريبي",
-      price: 99.99,
-      discountPrice: 79.99,
-      categoryId: "1",
-      stockQuantity: 10,
-      imageUrl: "https://via.placeholder.com/150",
-      isFeatured: true,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      unit: "قطعة",
-      dailyDeals: true
-    );
+    // Add multiple dummy products
+    final List<ProductModel> dummyProducts = [
+      ProductModel(
+        id: "1",
+        name: "سماعات بلوتوث",
+        description: "سماعات لاسلكية عالية الجودة",
+        price: 199.99,
+        discountPrice: 149.99,
+        categoryId: "1",
+        stockQuantity: 50,
+        imageUrl: "https://picsum.photos/200",
+        isFeatured: true,
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        unit: "قطعة",
+        dailyDeals: true
+      ),
+      ProductModel(
+        id: "2",
+        name: "ساعة ذكية",
+        description: "ساعة ذكية متعددة المزايا",
+        price: 299.99,
+        discountPrice: 249.99,
+        categoryId: "2",
+        stockQuantity: 30,
+        imageUrl: "https://picsum.photos/201",
+        isFeatured: true,
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        unit: "قطعة",
+        dailyDeals: false
+      ),
+      ProductModel(
+        id: "3",
+        name: "حقيبة ظهر",
+        description: "حقيبة ظهر عصرية ومريحة",
+        price: 129.99,
+        discountPrice: 99.99,
+        categoryId: "3",
+        stockQuantity: 100,
+        imageUrl: "https://picsum.photos/202",
+        isFeatured: true,
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        unit: "قطعة",
+        dailyDeals: true
+      ),
+    ];
     
-    _products.add(dummyProduct);
+    _products.addAll(dummyProducts);
     notifyListeners();
   }
 
