@@ -4,7 +4,7 @@ import '../services/cart_service.dart';
 import '../models/cart_item_model.dart';
 import '../utils/notifications.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'checkout_page.dart';
+import '../providers/app_state.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -157,22 +157,91 @@ class CartPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CheckoutPage(),
-                            ),
-                          );
-                        },
+                        onPressed: cartItems.isEmpty
+                            ? null
+                            : () {
+                                // TODO: تنفيذ عملية الطلب مباشرة
+                                final cartService = Provider.of<CartService>(context, listen: false);
+                                final appState = Provider.of<AppState>(context, listen: false);
+                                
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Row(
+                                      children: [
+                                        Icon(Icons.info_outline, color: Colors.amber),
+                                        SizedBox(width: 8),
+                                        Text('تأكيد الطلب'),
+                                      ],
+                                    ),
+                                    content: const Text('هل أنت متأكد من إتمام الطلب؟'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('إلغاء'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          try {
+                                            final subtotal = cartService.cartTotal;
+                                            final deliveryFee = subtotal > 500 ? 0.0 : 30.0;
+
+                                            await appState.createOrder(
+                                              shippingAddress: 'التوصيل عند الباب',
+                                              phone: '01234567890',
+                                              deliveryFee: deliveryFee,
+                                            );
+
+                                            await cartService.clearCart();
+
+                                            if (!context.mounted) return;
+                                            Navigator.pop(context);
+
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('تم إنشاء الطلب بنجاح'),
+                                                backgroundColor: Colors.green,
+                                              ),
+                                            );
+                                          } catch (e) {
+                                            if (!context.mounted) return;
+                                            Navigator.pop(context);
+                                            
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('حدث خطأ: $e'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: const Text('تأكيد'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6E58A8),
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        child: const Text(
-                          'متابعة الشراء',
-                          style: TextStyle(fontSize: 18),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.shopping_cart_checkout, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text(
+                              'إتمام الطلب',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
