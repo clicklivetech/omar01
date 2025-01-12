@@ -49,6 +49,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'عمر ماركت',
         debugShowCheckedModeBanner: false,
+        initialRoute: '/',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: const Color(0xFF6E58A8),
@@ -66,8 +67,15 @@ class MyApp extends StatelessWidget {
           Locale('ar', ''),
         ],
         locale: const Locale('ar', ''),
-        home: const MainLayout(),
         onGenerateRoute: (settings) {
+          // Remove any query parameters from the route name
+          final uri = Uri.parse(settings.name ?? '/');
+          final path = uri.path;
+          
+          if (path == '/') {
+            return MaterialPageRoute(builder: (context) => const MainLayout());
+          }
+          
           if (settings.name == '/category') {
             final CategoryModel category = settings.arguments as CategoryModel;
             return MaterialPageRoute(
@@ -75,6 +83,9 @@ class MyApp extends StatelessWidget {
             );
           }
           return null;
+        },
+        onUnknownRoute: (settings) {
+          return MaterialPageRoute(builder: (context) => const MainLayout());
         },
       ),
     );
