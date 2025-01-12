@@ -1,19 +1,29 @@
+import 'package:logger/logger.dart';
+
 class LoggerService {
+  static final _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 8,
+      lineLength: 120,
+      colors: true,
+      printEmojis: true,
+    ),
+  );
+
   static void error(String message, [dynamic error, StackTrace? stackTrace]) {
-    print('❌ ERROR: $message');
-    if (error != null) print('Error details: $error');
-    if (stackTrace != null) print('Stack trace: $stackTrace');
+    _logger.e(message, error: error, stackTrace: stackTrace);
   }
 
   static void info(String message) {
-    print('ℹ️ INFO: $message');
+    _logger.i(message);
   }
 
   static void success(String message) {
-    print('✅ SUCCESS: $message');
+    _logger.i('✅ $message');
   }
 
   static void warning(String message) {
-    print('⚠️ WARNING: $message');
+    _logger.w(message);
   }
 }

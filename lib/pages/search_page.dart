@@ -23,7 +23,6 @@ class _SearchPageState extends State<SearchPage> {
 
   // حالة البحث
   bool get _isEmpty => _searchQuery.isEmpty && _searchResults.isEmpty;
-  bool get _hasResults => _searchResults.isNotEmpty;
   bool get _noResults => _searchQuery.isNotEmpty && _searchResults.isEmpty && !_isLoading;
 
   @override

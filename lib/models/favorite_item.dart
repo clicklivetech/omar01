@@ -10,8 +10,8 @@ class FavoriteItem {
     String? id,
     required this.product,
     DateTime? addedAt,
-  })  : this.id = id ?? const Uuid().v4(),
-        this.addedAt = addedAt ?? DateTime.now();
+  })  : id = id ?? const Uuid().v4(),
+        addedAt = addedAt ?? DateTime.now();
 
   // تحويل من JSON
   factory FavoriteItem.fromJson(Map<String, dynamic> json) {

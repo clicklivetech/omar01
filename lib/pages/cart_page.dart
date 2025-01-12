@@ -4,7 +4,6 @@ import '../services/cart_service.dart';
 import '../models/cart_item_model.dart';
 import '../utils/notifications.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../providers/app_state.dart';
 import 'checkout_page.dart';
 
 class CartPage extends StatelessWidget {
@@ -158,37 +157,22 @@ class CartPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: cartItems.isEmpty
-                            ? null
-                            : () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const CheckoutPage(),
-                                  ),
-                                );
-                              },
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CheckoutPage(),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6E58A8),
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.shopping_cart_checkout, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              'متابعة الشراء',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        child: const Text(
+                          'متابعة الشراء',
+                          style: TextStyle(fontSize: 18),
                         ),
                       ),
                     ],

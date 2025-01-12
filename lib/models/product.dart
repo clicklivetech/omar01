@@ -33,9 +33,9 @@ class Product {
     required this.unit,
     this.dailyDeals = false,
     this.rating = 0.0,
-  })  : this.id = id ?? const Uuid().v4(),
-        this.createdAt = createdAt ?? DateTime.now(),
-        this.updatedAt = updatedAt ?? DateTime.now();
+  })  : id = id ?? const Uuid().v4(),
+        createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
   bool get isOnSale => discountPrice != null && discountPrice! < price;
 
@@ -101,7 +101,7 @@ class Product {
     double? rating,
   }) {
     return Product(
-      id: this.id,
+      id: id,
       name: name ?? this.name,
       description: description ?? this.description,
       price: price ?? this.price,
