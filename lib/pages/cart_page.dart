@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../services/cart_service.dart';
 import '../models/cart_item_model.dart';
 import '../utils/notifications.dart';
+import '../providers/app_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'checkout_page.dart';
+import 'login_page.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -158,12 +160,35 @@ class CartPage extends StatelessWidget {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CheckoutPage(),
-                            ),
-                          );
+                          final appState = Provider.of<AppState>(context, listen: false);
+                          
+                          // التحقق من تسجيل الدخول
+                          if (!appState.isLoggedIn) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(isCheckout: true),
+                              ),
+                            ).then((result) {
+                              // إذا تم تسجيل الدخول بنجاح، انتقل إلى صفحة الدفع
+                              if (result == true) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CheckoutPage(),
+                                  ),
+                                );
+                              }
+                            });
+                          } else {
+                            // إذا كان المستخدم مسجل دخول، انتقل مباشرة إلى صفحة الدفع
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CheckoutPage(),
+                              ),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF6E58A8),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/cart_service.dart';
+import '../models/cart_item_model.dart';
+import 'login_page.dart';  // إضافة استيراد صفحة تسجيل الدخول
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -17,6 +19,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _notesController = TextEditingController();
   bool _setAsDefault = false;
   int _currentStep = 0;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -452,91 +455,58 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (!_validateAddressStep()) return;
 
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    
-    final cartService = Provider.of<CartService>(context, listen: false);
-    if (cartService.getCartItems().isEmpty) {
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('السلة فارغة'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // عرض مؤشر التحميل
-    if (!mounted) return;
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-
-    if (!mounted) return;
     final appState = Provider.of<AppState>(context, listen: false);
     
-    try {
-      // حساب رسوم التوصيل بناءً على المجموع
-      final subtotal = cartService.cartTotal;
-      final deliveryFee = subtotal > 500 ? 0.0 : 30.0;  // مجاني للطلبات أكثر من 500 جنيه
+    // التحقق من تسجيل الدخول
+    if (!appState.isLoggedIn) {
+      // الانتقال إلى صفحة تسجيل الدخول
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LoginPage(isCheckout: true),
+        ),
+      );
 
-      // حفظ العنوان إذا تم اختيار ذلك
-      if (_setAsDefault) {
-        await appState.addAddress(
-          name: '',  // اسم المستخدم سيكون فارغاً حالياً
-          address: _addressController.text,
-          phone: _phoneController.text,
-          notes: _notesController.text,
-          setAsDefault: true,
+      // إذا لم يتم تسجيل الدخول، نتوقف هنا
+      if (result != true || !appState.isLoggedIn) return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // متابعة إنشاء الطلب
+    try {
+      final cartService = Provider.of<CartService>(context, listen: false);
+      if (cartService.getCartItems().isEmpty) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(
+            content: Text('السلة فارغة'),
+            backgroundColor: Colors.red,
+          ),
         );
+        return;
       }
 
-      // إنشاء الطلب
       final orderId = await appState.createOrder(
         shippingAddress: _addressController.text,
         phone: _phoneController.text,
-        deliveryFee: deliveryFee,
+        deliveryFee: _getDeliveryFee(),
       );
 
+      // عرض رسالة النجاح
       if (!mounted) return;
-
-      // مسح السلة بعد إتمام الطلب بنجاح
-      await cartService.clearCart();
-
-      if (!mounted) return;
-      // عرض رسالة النجاح مع رقم الطلب
+      
       await showDialog(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.green),
-              SizedBox(width: 8),
-              Text('تم إنشاء الطلب بنجاح'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('رقم الطلب: $orderId'),
-              const SizedBox(height: 8),
-              Text(
-                deliveryFee == 0 
-                  ? 'التوصيل مجاني!'
-                  : 'رسوم التوصيل: ${deliveryFee.toStringAsFixed(2)} جنيه',
-                style: const TextStyle(color: Colors.green),
-              ),
-            ],
-          ),
+        builder: (context) => AlertDialog(
+          title: const Text('تم إنشاء الطلب بنجاح'),
+          content: Text('رقم الطلب: $orderId'),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(dialogContext).pop();
-                navigator.pop();
+                Navigator.pop(context); // إغلاق الـ Dialog
+                Navigator.pop(context); // العودة للصفحة السابقة
               },
               child: const Text('حسناً'),
             ),
@@ -544,16 +514,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
       );
     } catch (e) {
-      if (!mounted) return;
-      
-      // عرض رسالة الخطأ
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text('حدث خطأ أثناء إنشاء الطلب: $e'),
+          content: Text('حدث خطأ: $e'),
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  double _getDeliveryFee() {
+    final cartService = Provider.of<CartService>(context, listen: false);
+    final subtotal = cartService.cartTotal;
+    return subtotal > 500 ? 0.0 : 30.0;  // مجاني للطلبات أكثر من 500 جنيه
   }
 
   @override

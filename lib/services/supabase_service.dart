@@ -1,7 +1,7 @@
 import 'package:supabase/supabase.dart';
 import '../models/product_model.dart';
 import '../models/category_model.dart';
-import '../models/banner.dart' as app_banner;
+import '../models/banner_model.dart' as app_banner;
 import '../services/logger_service.dart';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
@@ -98,7 +98,7 @@ class SupabaseService {
   }
 
   // الحصول على البانرات النشطة
-  static Future<List<app_banner.Banner>> getActiveBanners() async {
+  static Future<List<app_banner.BannerModel>> getActiveBanners() async {
     try {
       final response = await client
           .from('banners')
@@ -107,7 +107,7 @@ class SupabaseService {
           .order('created_at');
 
       return (response as List)
-          .map((item) => app_banner.Banner.fromJson(item))
+          .map((item) => app_banner.BannerModel.fromJson(item))
           .toList();
     } catch (e) {
       LoggerService.error('Error getting banners: $e');
@@ -171,7 +171,7 @@ class SupabaseService {
   }
 
   // Authentication methods
-  Future<AuthResponse> signInWithEmail({
+  static Future<AuthResponse> signInWithEmail({
     required String email,
     required String password,
   }) async {
@@ -180,14 +180,19 @@ class SupabaseService {
         email: email,
         password: password,
       );
+      
+      if (response.user == null) {
+        throw Exception('فشل تسجيل الدخول');
+      }
+
       return response;
     } catch (e) {
-      LoggerService.error('Error signing in: $e');
+      LoggerService.error('Error in signInWithEmail: $e');
       rethrow;
     }
   }
 
-  Future<AuthResponse> signUpWithEmail({
+  static Future<AuthResponse> signUpWithEmail({
     required String email,
     required String password,
   }) async {
@@ -196,18 +201,23 @@ class SupabaseService {
         email: email,
         password: password,
       );
+      
+      if (response.user == null) {
+        throw Exception('فشل إنشاء الحساب');
+      }
+
       return response;
     } catch (e) {
-      LoggerService.error('Error signing up: $e');
+      LoggerService.error('Error in signUpWithEmail: $e');
       rethrow;
     }
   }
 
-  Future<void> signOut() async {
+  static Future<void> signOut() async {
     try {
       await client.auth.signOut();
     } catch (e) {
-      LoggerService.error('Error signing out: $e');
+      LoggerService.error('Error in signOut: $e');
       rethrow;
     }
   }

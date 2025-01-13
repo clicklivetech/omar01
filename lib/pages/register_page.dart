@@ -29,7 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      await SupabaseService().signUpWithEmail(
+      await SupabaseService.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );

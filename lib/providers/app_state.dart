@@ -51,6 +51,8 @@ class AppState with ChangeNotifier {
 
   String? get currentUserId => _currentUserId;
 
+  bool get isLoggedIn => _currentUserId != null;
+
   Future<void> _loadAddresses() async {
     final prefs = await SharedPreferences.getInstance();
     final addressesJson = prefs.getStringList('addresses') ?? [];
@@ -465,5 +467,35 @@ class AppState with ChangeNotifier {
   bool canCancelOrder(OrderModel order) {
     return order.status != OrderStatus.cancelled.toString().split('.').last &&
            order.status != OrderStatus.delivered.toString().split('.').last;
+  }
+
+  Future<void> loginWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await SupabaseService.signInWithEmail(
+        email: email,
+        password: password,
+      );
+      _currentUserId = response.user?.id;
+      await fetchUserOrders(); // تحديث الطلبات بعد تسجيل الدخول
+      notifyListeners();
+    } catch (e) {
+      LoggerService.error('Error logging in: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      await SupabaseService.signOut();
+      _currentUserId = null;
+      _orders.clear();
+      notifyListeners();
+    } catch (e) {
+      LoggerService.error('Error logging out: $e');
+      rethrow;
+    }
   }
 }
