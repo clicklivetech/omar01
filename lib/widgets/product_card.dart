@@ -3,6 +3,7 @@ import '../models/product_model.dart';
 import '../services/cart_service.dart';
 import '../services/favorites_service.dart';
 import '../utils/notifications.dart';
+import '../utils/format_utils.dart';
 import 'package:provider/provider.dart';
 import '../pages/product_details_page.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -172,30 +173,36 @@ class ProductCard extends StatelessWidget {
                       Row(
                         children: [
                           if (product.discountPrice != null) ...[
-                            Text(
-                              '${product.discountPrice} جنيه',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                            Expanded(
+                              child: Text(
+                                formatPrice(product.discountPrice!),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              '${product.price} جنيه',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                decoration: TextDecoration.lineThrough,
-                                fontSize: 12,
+                            Expanded(
+                              child: Text(
+                                formatPrice(product.price),
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  decoration: TextDecoration.lineThrough,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           ] else
-                            Text(
-                              '${product.price} جنيه',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                            Expanded(
+                              child: Text(
+                                formatPrice(product.price),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                         ],

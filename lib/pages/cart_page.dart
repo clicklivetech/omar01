@@ -7,6 +7,7 @@ import '../providers/app_state.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'checkout_page.dart';
 import 'login_page.dart';
+import '../utils/format_utils.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -148,7 +149,7 @@ class CartPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${cartService.cartTotal.toStringAsFixed(2)} ج.م',
+                            formatPrice(cartService.cartTotal),
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -260,10 +261,10 @@ class CartItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${cartItem.price.toStringAsFixed(2)} ج.م',
-                    style: TextStyle(
+                    formatPrice(cartItem.price * cartItem.quantity),
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),

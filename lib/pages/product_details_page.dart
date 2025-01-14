@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../models/product_model.dart';
 import '../providers/app_state.dart';
+import '../utils/format_utils.dart';
 
 class ProductDetailsPage extends StatelessWidget {
   final ProductModel product;
@@ -76,11 +77,11 @@ class ProductDetailsPage extends StatelessWidget {
                               ),
                             ),
                           Text(
-                            '${product.price.toStringAsFixed(2)} ج.م',
+                            formatPrice(product.price),
                             style: const TextStyle(
-                              color: Color(0xFF6E58A8),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
+                              color: Color(0xFF6E58A8),
                             ),
                           ),
                         ],

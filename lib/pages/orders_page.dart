@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'order_details_page.dart';
 import '../enums/order_status.dart';
 import '../enums/payment_method.dart';
+import '../utils/format_utils.dart';
 
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
@@ -120,10 +121,10 @@ class _OrderCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'المبلغ الإجمالي: ${order.totalAmount} ريال',
+                'المجموع: ${formatPrice(order.totalAmount)}',
                 style: const TextStyle(
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF6E58A8),
                 ),
               ),
               const SizedBox(height: 8),

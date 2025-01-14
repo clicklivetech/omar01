@@ -5,6 +5,7 @@ import '../providers/app_state.dart';
 import '../models/product_model.dart';
 import '../services/supabase_service.dart';
 import '../enums/order_status.dart';
+import '../utils/format_utils.dart';
 
 class OrderDetailsPage extends StatelessWidget {
   final order_model.OrderModel order;
@@ -52,8 +53,10 @@ class OrderDetailsPage extends StatelessWidget {
             const Text('طريقة الدفع: نقداً عند الاستلام',
                 style: TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
-            Text('المبلغ الإجمالي: ${order.totalAmount.toStringAsFixed(2)} ريال',
-                style: const TextStyle(fontSize: 16)),
+            Text(
+              'المبلغ الإجمالي: ${formatPrice(order.totalAmount)}',
+              style: const TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 8),
             Text('التاريخ: ${_formatDate(order.createdAt)}',
                 style: const TextStyle(fontSize: 16)),
@@ -98,7 +101,13 @@ class OrderDetailsPage extends StatelessWidget {
                     )
                   : const Icon(Icons.image_not_supported),
                 title: Text(item.product?.name ?? 'منتج غير معروف'),
-                subtitle: Text('السعر: ${item.price.toStringAsFixed(2)} ريال'),
+                subtitle: Text(
+                  'السعر: ${formatPrice(item.price)}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
                 trailing: Text('الكمية: ${item.quantity}'),
               );
             },
