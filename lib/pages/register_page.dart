@@ -41,8 +41,9 @@ class _RegisterPageState extends State<RegisterPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+      
       if (mounted) {
-        Navigator.of(context).pop(); // Return to login page
+        Navigator.of(context).pop(); // العودة إلى صفحة تسجيل الدخول
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.'),
@@ -52,13 +53,9 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'حدث خطأ أثناء إنشاء الحساب';
-        if (e.toString().contains('already registered')) {
-          errorMessage = 'هذا البريد الإلكتروني مسجل بالفعل';
-        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: Colors.red,
           ),
         );
