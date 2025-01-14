@@ -14,20 +14,17 @@ import 'providers/app_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
   if (kIsWeb) {
     setUrlStrategy(PathUrlStrategy());
   }
-  
   final prefs = await SharedPreferences.getInstance();
-  
   runApp(MyApp(prefs: prefs));
 }
 
 class MyApp extends StatelessWidget {
-  final SharedPreferences prefs;
+  final SharedPreferences? prefs;
   
-  const MyApp({super.key, required this.prefs});
+  const MyApp({super.key, this.prefs});
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +38,10 @@ class MyApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider<CartService>(
-          create: (context) => CartService(prefs)
+          create: (context) => CartService(prefs!),
         ),
         ChangeNotifierProvider<FavoritesService>(
-          create: (context) => FavoritesService(prefs)
+          create: (context) => FavoritesService(prefs!),
         ),
       ],
       child: MaterialApp(
@@ -52,7 +49,7 @@ class MyApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF6E58A8),
+            seedColor: Color(0xFF6E58A8),
           ),
           useMaterial3: true,
           fontFamily: 'Cairo',
