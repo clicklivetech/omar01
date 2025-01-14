@@ -37,16 +37,25 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      await SupabaseService.signUpWithEmail(
+      // إنشاء الحساب
+      final response = await SupabaseService.signUpWithEmail(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
       
       if (mounted) {
-        Navigator.of(context).pop(); // العودة إلى صفحة تسجيل الدخول
+        // تسجيل الدخول مباشرة
+        await SupabaseService.signInWithEmail(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+
+        // العودة إلى الصفحة الرئيسية
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.'),
+            content: Text('تم إنشاء الحساب وتسجيل الدخول بنجاح!'),
             backgroundColor: Colors.green,
           ),
         );
