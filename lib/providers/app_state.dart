@@ -11,6 +11,7 @@ import '../services/logger_service.dart';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
 import '../enums/payment_method.dart';
+import '../services/cart_service.dart';
 
 class AppState with ChangeNotifier {
   final List<CartItemModel> _cartItems = [];
@@ -19,6 +20,7 @@ class AppState with ChangeNotifier {
   final List<AddressModel> _addresses = [];
   List<OrderModel> _orders = []; // تم تغييرها من final إلى متغير عادي
   String? _currentUserId;
+  String? _userEmail;
 
   int _currentPageIndex = 0;
 
@@ -50,23 +52,34 @@ class AppState with ChangeNotifier {
   List<OrderModel> get orders => _orders;
 
   String? get currentUserId => _currentUserId;
+  String? get userEmail => _userEmail;
 
   bool get isLoggedIn => _currentUserId != null;
 
   Future<void> _loadAddresses() async {
-    final prefs = await SharedPreferences.getInstance();
-    final addressesJson = prefs.getStringList('addresses') ?? [];
-    _addresses.clear();
-    _addresses.addAll(
-      addressesJson.map((json) => AddressModel.fromJson(jsonDecode(json))).toList(),
-    );
-    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final addressesJson = prefs.getStringList('addresses') ?? [];
+      _addresses.clear();
+      _addresses.addAll(
+        addressesJson.map((json) => AddressModel.fromJson(jsonDecode(json))),
+      );
+      notifyListeners();
+    } catch (e) {
+      LoggerService.error('Error loading addresses: $e');
+    }
   }
 
   Future<void> _saveAddresses() async {
-    final prefs = await SharedPreferences.getInstance();
-    final addressesJson = _addresses.map((addr) => jsonEncode(addr.toJson())).toList();
-    await prefs.setStringList('addresses', addressesJson);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final addressesJson = _addresses
+          .map((address) => jsonEncode(address.toJson()))
+          .toList();
+      await prefs.setStringList('addresses', addressesJson);
+    } catch (e) {
+      LoggerService.error('Error saving addresses: $e');
+    }
   }
 
   Future<void> _loadCart() async {
@@ -100,24 +113,16 @@ class AppState with ChangeNotifier {
     bool setAsDefault = false,
   }) async {
     final newAddress = AddressModel(
-      id: const Uuid().v4(),
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
       phone: phone,
       address: address,
       notes: notes,
-      isDefault: setAsDefault || _addresses.isEmpty,
+      isDefault: setAsDefault,
     );
 
-    if (setAsDefault) {
-      // إذا كان سيتم تعيين العنوان الجديد كافتراضي، نقوم بإلغاء تعيين العنوان الافتراضي السابق
-      _addresses.where((addr) => addr.isDefault).forEach((addr) {
-        final index = _addresses.indexOf(addr);
-        _addresses[index] = addr.copyWith(isDefault: false);
-      });
-    }
-
     _addresses.add(newAddress);
-    await _saveAddresses();
+    _saveAddresses();
     notifyListeners();
   }
 
@@ -131,58 +136,22 @@ class AppState with ChangeNotifier {
   }) async {
     final index = _addresses.indexWhere((addr) => addr.id == id);
     if (index != -1) {
-      if (setAsDefault == true) {
-        // إلغاء تعيين العنوان الافتراضي السابق
-        _addresses.where((addr) => addr.isDefault).forEach((addr) {
-          final i = _addresses.indexOf(addr);
-          _addresses[i] = addr.copyWith(isDefault: false);
-        });
-      }
-
       _addresses[index] = _addresses[index].copyWith(
         name: name,
         phone: phone,
         address: address,
         notes: notes,
-        isDefault: setAsDefault ?? _addresses[index].isDefault,
+        isDefault: setAsDefault,
       );
-
-      await _saveAddresses();
+      _saveAddresses();
       notifyListeners();
     }
   }
 
-  Future<void> removeAddress(String id) async {
-    final index = _addresses.indexWhere((addr) => addr.id == id);
-    if (index != -1) {
-      final wasDefault = _addresses[index].isDefault;
-      _addresses.removeAt(index);
-
-      if (wasDefault && _addresses.isNotEmpty) {
-        // إذا تم حذف العنوان الافتراضي، نقوم بتعيين أول عنوان كافتراضي
-        _addresses[0] = _addresses[0].copyWith(isDefault: true);
-      }
-
-      await _saveAddresses();
-      notifyListeners();
-    }
-  }
-
-  Future<void> setDefaultAddress(String id) async {
-    final index = _addresses.indexWhere((addr) => addr.id == id);
-    if (index != -1) {
-      // إلغاء تعيين العنوان الافتراضي السابق
-      _addresses.where((addr) => addr.isDefault).forEach((addr) {
-        final i = _addresses.indexOf(addr);
-        _addresses[i] = addr.copyWith(isDefault: false);
-      });
-
-      // تعيين العنوان الجديد كافتراضي
-      _addresses[index] = _addresses[index].copyWith(isDefault: true);
-
-      await _saveAddresses();
-      notifyListeners();
-    }
+  void deleteAddress(String id) {
+    _addresses.removeWhere((addr) => addr.id == id);
+    _saveAddresses();
+    notifyListeners();
   }
 
   void addToCart(ProductModel product) {
@@ -319,35 +288,30 @@ class AppState with ChangeNotifier {
     required String shippingAddress,
     required String phone,
     required double deliveryFee,
+    required CartService cartService,
   }) async {
-    final cartItems = _cartItems;
+    final cartItems = cartService.getCartItems();
     if (cartItems.isEmpty) throw Exception('السلة فارغة');
 
-    final totalAmount = cartTotal + deliveryFee;
+    final totalAmount = cartService.cartTotal + deliveryFee;
     
     try {
       final orderId = await SupabaseService.createOrder(
-        userId: _currentUserId,
+        userId: _currentUserId!,
         shippingAddress: shippingAddress,
         phone: phone,
         totalAmount: totalAmount,
         deliveryFee: deliveryFee,
-        items: _cartItems.map((item) => CartItemModel(
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          name: item.name,
-          imageUrl: item.imageUrl,
-        )).toList(),
+        items: cartItems,
       );
 
-      // تحديث قائمة الطلبات فقط إذا كان المستخدم مسجل دخول
+      // تحديث قائمة الطلبات
       if (_currentUserId != null) {
         await fetchUserOrders();
       }
       
       // مسح السلة بعد نجاح الطلب
-      clearCart();
+      await cartService.clearCart();
       
       return orderId;
     } catch (e, stackTrace) {
@@ -358,14 +322,19 @@ class AppState with ChangeNotifier {
 
   // جلب طلبات المستخدم
   Future<void> fetchUserOrders() async {
-    if (_currentUserId == null) return;
+    if (_currentUserId == null) {
+      LoggerService.error('Cannot fetch orders: User is not logged in');
+      return;
+    }
 
     try {
+      LoggerService.info('Fetching orders for user: $_currentUserId');
       final orders = await SupabaseService.getUserOrders(_currentUserId!);
+      LoggerService.info('Fetched ${orders.length} orders');
       _orders = orders;
       notifyListeners();
     } catch (e) {
-      LoggerService.error('Error fetching user orders', e);
+      LoggerService.error('Error fetching user orders: $e');
     }
   }
 
@@ -479,6 +448,7 @@ class AppState with ChangeNotifier {
         password: password,
       );
       _currentUserId = response.user?.id;
+      _userEmail = email;
       await fetchUserOrders(); // تحديث الطلبات بعد تسجيل الدخول
       notifyListeners();
     } catch (e) {
@@ -491,6 +461,7 @@ class AppState with ChangeNotifier {
     try {
       await SupabaseService.signOut();
       _currentUserId = null;
+      _userEmail = null;
       _orders.clear();
       notifyListeners();
     } catch (e) {

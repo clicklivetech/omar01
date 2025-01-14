@@ -52,7 +52,7 @@ class CartPage extends StatelessWidget {
                             const SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: () {
-                                Navigator.of(context).pop();
+                                Navigator.pushNamed(context, '/categories');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Theme.of(context).colorScheme.primary,

@@ -4,6 +4,8 @@ import '../providers/app_state.dart';
 import '../services/cart_service.dart';
 import '../models/cart_item_model.dart';
 import 'login_page.dart';  // إضافة استيراد صفحة تسجيل الدخول
+import '../utils/notifications.dart';
+import 'order_success_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -20,6 +22,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _setAsDefault = false;
   int _currentStep = 0;
   bool _isLoading = false;
+  bool _isProcessing = false;  // متغير للتحقق من حالة معالجة الطلب
 
   @override
   void initState() {
@@ -452,68 +455,40 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _submitOrder() async {
+    // التحقق من أن الطلب لا يتم معالجته حالياً
+    if (_isProcessing) return;
+
     if (!_validateAddressStep()) return;
 
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final appState = Provider.of<AppState>(context, listen: false);
+    final cartService = Provider.of<CartService>(context, listen: false);
     
-    // التحقق من تسجيل الدخول
-    if (!appState.isLoggedIn) {
-      // الانتقال إلى صفحة تسجيل الدخول
-      final result = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const LoginPage(isCheckout: true),
-        ),
-      );
-
-      // إذا لم يتم تسجيل الدخول، نتوقف هنا
-      if (result != true || !appState.isLoggedIn) return;
-    }
-
     setState(() {
       _isLoading = true;
+      _isProcessing = true;  // تعيين حالة المعالجة
     });
 
-    // متابعة إنشاء الطلب
     try {
-      final cartService = Provider.of<CartService>(context, listen: false);
-      if (cartService.getCartItems().isEmpty) {
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(
-            content: Text('السلة فارغة'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
       final orderId = await appState.createOrder(
         shippingAddress: _addressController.text,
         phone: _phoneController.text,
         deliveryFee: _getDeliveryFee(),
+        cartService: cartService,
       );
 
-      // عرض رسالة النجاح
       if (!mounted) return;
-      
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('تم إنشاء الطلب بنجاح'),
-          content: Text('رقم الطلب: $orderId'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // إغلاق الـ Dialog
-                Navigator.pop(context); // العودة للصفحة السابقة
-              },
-              child: const Text('حسناً'),
-            ),
-          ],
+
+      // التوجه إلى صفحة نجاح الطلب
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderSuccessPage(orderId: orderId),
         ),
+        (route) => false,  // إزالة جميع الصفحات السابقة من المكدس
       );
     } catch (e) {
+      if (!mounted) return;
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text('حدث خطأ: $e'),
@@ -524,6 +499,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _isProcessing = false;  // إعادة تعيين حالة المعالجة
         });
       }
     }

@@ -13,6 +13,11 @@ class OrdersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
 
+    // تحميل الطلبات عند فتح الصفحة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      appState.fetchUserOrders();
+    });
+
     if (appState.orders.isEmpty) {
       return const Center(
         child: Column(

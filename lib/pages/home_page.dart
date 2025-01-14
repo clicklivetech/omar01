@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import '../providers/app_state.dart';
 import 'search_page.dart';
+import 'cart_page.dart';
 import '../widgets/product_card_shimmer.dart';
 import '../widgets/product_card.dart'; 
 import '../services/supabase_service.dart';
@@ -10,7 +11,12 @@ import '../models/banner_model.dart' as app_banner;
 import '../models/product_model.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int initialIndex;
+
+  const HomePage({
+    super.key,
+    this.initialIndex = 0,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -92,7 +98,6 @@ class _HomePageState extends State<HomePage> {
         height: 200,
         aspectRatio: 16/9,
         viewportFraction: 0.9,
-        initialPage: 0,
         enableInfiniteScroll: true,
         reverse: false,
         autoPlay: true,
@@ -341,14 +346,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF6E58A8),
         foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         title: GestureDetector(
           onTap: () {
             Navigator.push(
@@ -387,7 +387,12 @@ class _HomePageState extends State<HomePage> {
               IconButton(
                 icon: const Icon(Icons.shopping_cart, color: Colors.white),
                 onPressed: () {
-                  // Navigate to cart page
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CartPage(),
+                    ),
+                  );
                 },
               ),
               Positioned(
@@ -412,7 +417,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           )
-                        : const SizedBox.shrink();
+                        : const SizedBox();
                   },
                 ),
               ),

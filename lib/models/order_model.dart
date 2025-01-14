@@ -63,21 +63,50 @@ class OrderModel {
   }
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
-    return OrderModel(
-      id: json['id'],
-      userId: json['user_id'],
-      status: json['status'],
-      totalAmount: json['total_amount'].toDouble(),
-      shippingAddress: json['shipping_address'],
-      phone: json['phone'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      deliveryFee: json['delivery_fee'].toDouble(),
-      paymentMethod: json['payment_method'],
-      items: (json['items'] as List).map((item) => OrderItem.fromJson(item)).toList(),
-      cancelledAt: json['cancelled_at'] != null ? DateTime.parse(json['cancelled_at']) : null,
-      oldStatus: json['old_status'],
-    );
+    try {
+      final orderItems = (json['order_items'] as List?)?.map((item) {
+        return OrderItem(
+          id: item['id']?.toString() ?? '',
+          orderId: item['order_id']?.toString() ?? '',
+          productId: item['product_id']?.toString() ?? '',
+          quantity: item['quantity'] ?? 0,
+          price: (item['price'] ?? 0).toDouble(),
+          createdAt: item['created_at'] != null 
+            ? DateTime.parse(item['created_at']) 
+            : DateTime.now(),
+          product: item['product'] != null 
+            ? ProductDetails.fromJson(item['product']) 
+            : null,
+        );
+      }).toList() ?? [];
+
+      return OrderModel(
+        id: json['id']?.toString(),
+        userId: json['user_id']?.toString() ?? '',
+        status: json['status']?.toString() ?? 'pending',
+        totalAmount: (json['total_amount'] ?? 0).toDouble(),
+        shippingAddress: json['shipping_address']?.toString() ?? '',
+        phone: json['phone']?.toString() ?? '',
+        createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : null,
+        updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at']) 
+          : null,
+        deliveryFee: (json['delivery_fee'] ?? 0).toDouble(),
+        paymentMethod: json['payment_method']?.toString() ?? 'cash',
+        items: orderItems,
+        cancelledAt: json['cancelled_at'] != null 
+          ? DateTime.parse(json['cancelled_at']) 
+          : null,
+        oldStatus: json['old_status']?.toString(),
+      );
+    } catch (e, stackTrace) {
+      print('Error parsing order JSON: $e');
+      print('Stack trace: $stackTrace');
+      print('JSON data: $json');
+      rethrow;
+    }
   }
 }
 
@@ -88,6 +117,7 @@ class OrderItem {
   final int quantity;
   final double price;
   final DateTime createdAt;
+  final ProductDetails? product;
 
   OrderItem({
     String? id,
@@ -96,6 +126,7 @@ class OrderItem {
     required this.quantity,
     required this.price,
     DateTime? createdAt,
+    this.product,
   }) : 
     id = id ?? const Uuid().v4(),
     createdAt = createdAt ?? DateTime.now();
@@ -108,17 +139,23 @@ class OrderItem {
       'quantity': quantity,
       'price': price,
       'created_at': createdAt.toIso8601String(),
+      'product': product?.toJson(),
     };
   }
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
-      id: json['id'],
-      orderId: json['order_id'],
-      productId: json['product_id'],
-      quantity: json['quantity'],
-      price: json['price'].toDouble(),
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id']?.toString() ?? '',
+      orderId: json['order_id']?.toString() ?? '',
+      productId: json['product_id']?.toString() ?? '',
+      quantity: json['quantity'] ?? 0,
+      price: (json['price'] ?? 0).toDouble(),
+      createdAt: json['created_at'] != null 
+        ? DateTime.parse(json['created_at']) 
+        : null,
+      product: json['product'] != null 
+        ? ProductDetails.fromJson(json['product']) 
+        : null,
     );
   }
 
@@ -128,6 +165,46 @@ class OrderItem {
       productId: cartItem.productId,
       quantity: cartItem.quantity,
       price: cartItem.price,
+    );
+  }
+}
+
+class ProductDetails {
+  final String id;
+  final String name;
+  final String description;
+  final double price;
+  final String imageUrl;
+  final bool isActive;
+
+  ProductDetails({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.price,
+    required this.imageUrl,
+    required this.isActive,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'price': price,
+      'image_url': imageUrl,
+      'is_active': isActive,
+    };
+  }
+
+  factory ProductDetails.fromJson(Map<String, dynamic> json) {
+    return ProductDetails(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'منتج غير معروف',
+      description: json['description']?.toString() ?? '',
+      price: (json['price'] ?? 0).toDouble(),
+      imageUrl: json['image_url']?.toString() ?? '',
+      isActive: json['is_active'] ?? true,
     );
   }
 }

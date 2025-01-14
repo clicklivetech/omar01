@@ -76,7 +76,7 @@ class OrderDetailsPage extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.all(16.0),
-            child: Text('Products',
+            child: Text('المنتجات',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
           ListView.builder(
@@ -85,35 +85,21 @@ class OrderDetailsPage extends StatelessWidget {
             itemCount: order.items.length,
             itemBuilder: (context, index) {
               final item = order.items[index];
-              final product = context.read<AppState>().products
-                  .firstWhere((p) => p.id == item.productId,
-                      orElse: () => ProductModel(
-                            id: item.productId,
-                            name: 'Product not found',
-                            description: '',
-                            price: item.price,
-                            imageUrl: '',
-                            categoryId: '',
-                            stockQuantity: 0,
-                            isFeatured: false,
-                            isActive: true,
-                            createdAt: DateTime.now(),
-                            updatedAt: DateTime.now(),
-                            unit: 'piece',
-                            dailyDeals: false,
-                          ));
               return ListTile(
-                leading: product.imageUrl.isNotEmpty
-                    ? Image.network(
-                        product.imageUrl,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      )
-                    : const Icon(Icons.image_not_supported),
-                title: Text(product.name),
-                subtitle: Text('Quantity: ${item.quantity}'),
-                trailing: Text('\$${(item.price * item.quantity).toStringAsFixed(2)}'),
+                leading: item.product?.imageUrl != null && item.product!.imageUrl.isNotEmpty
+                  ? Image.network(
+                      item.product!.imageUrl,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.image_not_supported);
+                      },
+                    )
+                  : const Icon(Icons.image_not_supported),
+                title: Text(item.product?.name ?? 'منتج غير معروف'),
+                subtitle: Text('السعر: ${item.price.toStringAsFixed(2)} ريال'),
+                trailing: Text('الكمية: ${item.quantity}'),
               );
             },
           ),
@@ -123,6 +109,9 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    final appState = context.read<AppState>();
+    final canCancel = appState.canCancelOrder(order);
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -139,30 +128,19 @@ class OrderDetailsPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          ElevatedButton.icon(
-            onPressed: () async {
-              await _confirmOrder(context);
-            },
-            icon: const Icon(Icons.check),
-            label: const Text('تأكيد الطلب'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          if (canCancel) // فقط إذا كان يمكن إلغاء الطلب
+            ElevatedButton.icon(
+              onPressed: () async {
+                await _cancelOrder(context);
+              },
+              icon: const Icon(Icons.cancel),
+              label: const Text('إلغاء الطلب'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
             ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              await _cancelOrder(context);
-            },
-            icon: const Icon(Icons.cancel),
-            label: const Text('إلغاء الطلب'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-          ),
           ElevatedButton.icon(
             onPressed: () {
               Navigator.pop(context);
@@ -170,7 +148,7 @@ class OrderDetailsPage extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
             label: const Text('العودة'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
+              backgroundColor: const Color(0xFF6E58A8),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
@@ -178,36 +156,6 @@ class OrderDetailsPage extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _confirmOrder(BuildContext context) async {
-    try {
-      // تحديث حالة الطلب في Supabase
-      await SupabaseService.updateOrderStatus(order.id, OrderStatus.confirmed);
-
-      if (!context.mounted) return;
-      
-      // عرض رسالة نجاح
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم تأكيد الطلب بنجاح'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // العودة إلى الصفحة السابقة
-      Navigator.pop(context);
-    } catch (e) {
-      if (!context.mounted) return;
-      
-      // عرض رسالة خطأ
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('حدث خطأ أثناء تأكيد الطلب: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   Future<void> _cancelOrder(BuildContext context) async {

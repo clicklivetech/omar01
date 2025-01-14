@@ -396,15 +396,39 @@ class SupabaseService {
   // الحصول على طلبات المستخدم
   static Future<List<OrderModel>> getUserOrders(String userId) async {
     try {
+      LoggerService.info('Starting to fetch orders from Supabase for user: $userId');
+      
       final response = await client
           .from('orders')
-          .select()
+          .select('*, order_items(*, product:products(*))')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return (response as List).map((order) => OrderModel.fromJson(order)).toList();
-    } catch (e) {
-      LoggerService.error('Error getting user orders: $e');
+      LoggerService.info('Received response from Supabase: ${response.toString()}');
+      
+      if (response == null) {
+        LoggerService.info('No orders found for user: $userId');
+        return [];
+      }
+
+      if (response is! List) {
+        LoggerService.error('Unexpected response type: ${response.runtimeType}');
+        return [];
+      }
+
+      final orders = response.map((order) {
+        try {
+          return OrderModel.fromJson(order);
+        } catch (e) {
+          LoggerService.error('Error parsing order: $e\nOrder data: $order');
+          return null;
+        }
+      }).whereType<OrderModel>().toList();
+
+      LoggerService.info('Successfully parsed ${orders.length} orders');
+      return orders;
+    } catch (e, stackTrace) {
+      LoggerService.error('Error getting user orders: $e\nStackTrace: $stackTrace');
       return [];
     }
   }
