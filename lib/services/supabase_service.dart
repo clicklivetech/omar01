@@ -227,7 +227,7 @@ class SupabaseService {
         // لا نريد أن نفشل عملية التسجيل إذا فشل إنشاء الملف الشخصي
       }
 
-      LoggerService.info('User signed up successfully: ${response.user.id}');
+      LoggerService.info('User signed up successfully: ${response.user?.id}');
       return response;
     } catch (e) {
       LoggerService.error('Error in signUpWithEmail: $e');
