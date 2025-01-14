@@ -42,6 +42,11 @@ class AppState with ChangeNotifier {
 
   int get cartItemsCount => _cartItems.length;  // Number of unique products in cart
 
+  int get totalCartItemsCount => _cartItems.fold(  // العدد الإجمالي للمنتجات في السلة
+    0,
+    (sum, item) => sum + item.quantity
+  );
+
   int get currentPageIndex => _currentPageIndex;
 
   List<AddressModel> get addresses => _addresses;

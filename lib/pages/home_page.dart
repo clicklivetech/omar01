@@ -5,7 +5,7 @@ import '../providers/app_state.dart';
 import 'search_page.dart';
 import 'cart_page.dart';
 import '../widgets/product_card_shimmer.dart';
-import '../widgets/product_card.dart'; 
+import '../widgets/product_card.dart';
 import '../services/supabase_service.dart';
 import '../models/banner_model.dart' as app_banner;
 import '../models/product_model.dart';
@@ -96,7 +96,7 @@ class _HomePageState extends State<HomePage> {
       itemCount: _banners.length,
       options: CarouselOptions(
         height: 200,
-        aspectRatio: 16/9,
+        aspectRatio: 16 / 9,
         viewportFraction: 0.9,
         enableInfiniteScroll: true,
         reverse: false,
@@ -113,9 +113,10 @@ class _HomePageState extends State<HomePage> {
           margin: const EdgeInsets.symmetric(horizontal: 5),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
-            color: banner.backgroundColor != null 
-              ? Color(int.parse(banner.backgroundColor!.replaceAll('#', '0xFF')))
-              : Colors.grey[200],
+            color: banner.backgroundColor != null
+                ? Color(
+                    int.parse(banner.backgroundColor!.replaceAll('#', '0xFF')))
+                : Colors.grey[200],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15),
@@ -261,7 +262,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(12),
