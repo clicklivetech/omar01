@@ -397,31 +397,31 @@ class _HomePageState extends State<HomePage> {
                   );
                 },
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Consumer<AppState>(
-                  builder: (context, appState, child) {
-                    final cartItemCount = appState.cartItems.length;
-                    return cartItemCount > 0
-                        ? Container(
+              Consumer<AppState>(
+                builder: (context, appState, child) {
+                  final uniqueItemsCount = appState.uniqueCartItemsCount;
+                  return uniqueItemsCount > 0
+                      ? Positioned(
+                          top: 5,
+                          right: 5,
+                          child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
                               color: Colors.red,
                               shape: BoxShape.circle,
                             ),
                             child: Text(
-                              cartItemCount.toString(),
+                              uniqueItemsCount.toString(),
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          )
-                        : const SizedBox();
-                  },
-                ),
+                          ),
+                        )
+                      : const SizedBox();
+                },
               ),
             ],
           ),

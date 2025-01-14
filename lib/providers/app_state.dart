@@ -12,6 +12,7 @@ import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
 import '../enums/payment_method.dart';
 import '../services/cart_service.dart';
+import 'package:supabase/supabase.dart' show User;
 
 class AppState with ChangeNotifier {
   final List<CartItemModel> _cartItems = [];
@@ -25,8 +26,12 @@ class AppState with ChangeNotifier {
   int _currentPageIndex = 0;
 
   AppState() {
-    _loadAddresses();
-    _loadCart();
+    try {
+      _loadAddresses();
+      _loadCart();
+    } catch (e) {
+      LoggerService.error('Error initializing AppState: $e');
+    }
   }
 
   List<CartItemModel> get cartItems => _cartItems;
@@ -40,7 +45,12 @@ class AppState with ChangeNotifier {
     (sum, item) => sum + (item.price * item.quantity)
   );
 
-  int get cartItemsCount => _cartItems.length;  // عدد الأصناف الفريدة في السلة
+  int get uniqueCartItemsCount => _cartItems.length;  // عدد الأصناف الفريدة في السلة
+
+  int get cartItemsQuantity => _cartItems.fold(
+    0, 
+    (sum, item) => sum + item.quantity
+  );  // إجمالي عدد القطع في السلة
 
   int get currentPageIndex => _currentPageIndex;
 
@@ -468,5 +478,14 @@ class AppState with ChangeNotifier {
       LoggerService.error('Error logging out: $e');
       rethrow;
     }
+  }
+
+  Future<void> setUser(User? user) async {
+    _currentUserId = user?.id;
+    _userEmail = user?.email;
+    if (_currentUserId != null) {
+      await fetchUserOrders();
+    }
+    notifyListeners();
   }
 }

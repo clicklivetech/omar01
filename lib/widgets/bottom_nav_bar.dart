@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:badges/badges.dart' as badges;
 import '../providers/app_state.dart';
 
 class BottomNavBar extends StatelessWidget {
@@ -30,10 +31,25 @@ class BottomNavBar extends StatelessWidget {
           label: 'الأقسام',
         ),
         BottomNavigationBarItem(
-          icon: Badge(
-            label: Text(context.watch<AppState>().cartItemsCount.toString()),
-            isLabelVisible: context.watch<AppState>().cartItemsCount > 0,
-            child: const Icon(Icons.shopping_cart),
+          icon: Consumer<AppState>(
+            builder: (context, appState, child) {
+              return badges.Badge(
+                position: badges.BadgePosition.topEnd(top: -12, end: -8),
+                showBadge: appState.uniqueCartItemsCount > 0,
+                badgeContent: Text(
+                  appState.uniqueCartItemsCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+                badgeStyle: const badges.BadgeStyle(
+                  badgeColor: Colors.red,
+                  padding: EdgeInsets.all(5),
+                ),
+                child: const Icon(Icons.shopping_cart),
+              );
+            },
           ),
           label: 'السلة',
         ),

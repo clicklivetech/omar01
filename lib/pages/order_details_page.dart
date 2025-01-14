@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:omar01/models/order_model.dart' as order_model;
+import '../models/order_model.dart' as order_model;
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/product_model.dart';

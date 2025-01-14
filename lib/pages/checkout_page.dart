@@ -172,7 +172,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           controller: _phoneController,
           decoration: const InputDecoration(
             labelText: 'رقم الهاتف',
-            hintText: 'مثال: 01234567890',
+            hintText: 'مثال: 0599123456',
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.phone),
           ),
@@ -181,8 +181,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
             if (value == null || value.isEmpty) {
               return 'يرجى إدخال رقم الهاتف';
             }
-            if (!RegExp(r'^01[0-9]{9}$').hasMatch(value)) {
-              return 'يرجى إدخال رقم هاتف صحيح';
+            // التحقق من صحة رقم الهاتف الفلسطيني
+            // يبدأ بـ 059 أو 056
+            if (!RegExp(r'^05[96][0-9]{7}$').hasMatch(value)) {
+              return 'يرجى إدخال رقم هاتف فلسطيني صحيح';
             }
             return null;
           },

@@ -4,6 +4,7 @@ import '../providers/app_state.dart';
 import 'login_page.dart';
 import 'orders_page.dart';
 import 'addresses_page.dart';
+import 'about_app_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -111,6 +112,20 @@ class ProfilePage extends StatelessWidget {
             // TODO: تنفيذ صفحة الدعم الفني
           },
         ),
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: const Text('عن التطبيق'),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AboutAppPage(),
+              ),
+            );
+          },
+        ),
+        const Divider(),
         _buildOptionTile(
           context,
           icon: Icons.info_outline,

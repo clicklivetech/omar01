@@ -19,6 +19,8 @@ class CartPage extends StatelessWidget {
         title: const Text('سلة التسوق'),
         backgroundColor: const Color(0xFF6E58A8),
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        centerTitle: true,
       ),
       body: Consumer<CartService>(
         builder: (context, cartService, child) {

@@ -7,6 +7,9 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'services/cart_service.dart';
 import 'services/favorites_service.dart';
 import 'pages/main_layout.dart';
+import 'pages/splash_screen.dart';
+import 'pages/login_page.dart';
+import 'pages/register_page.dart';
 import 'providers/app_state.dart';
 
 void main() async {
@@ -63,7 +66,13 @@ class MyApp extends StatelessWidget {
           Locale('ar', ''),
         ],
         locale: const Locale('ar', ''),
-        home: const MainLayout(),
+        initialRoute: '/splash',
+        routes: {
+          '/splash': (context) => const SplashScreen(),
+          '/': (context) => const MainLayout(),
+          '/login': (context) => const LoginPage(),
+          '/register': (context) => const RegisterPage(),
+        },
       ),
     );
   }

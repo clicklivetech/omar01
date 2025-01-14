@@ -91,8 +91,8 @@ class SupabaseService {
       LoggerService.info('Found ${response.length} products matching query: $query');
       
       return (response as List).map((item) => ProductModel.fromJson(item)).toList();
-    } catch (e, stackTrace) {
-      LoggerService.error('Error searching products: $e', e, stackTrace);
+    } catch (e) {
+      LoggerService.error('Error searching products: $e');
       return [];
     }
   }
@@ -199,32 +199,38 @@ class SupabaseService {
     try {
       LoggerService.info('Attempting to sign up user with email: $email');
       
+      // إنشاء المستخدم
       final response = await client.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'email': email,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        },
       );
+      
+      LoggerService.info('Auth response received: ${response.user?.id}');
       
       if (response.user == null) {
         LoggerService.error('User is null after signup');
         throw Exception('فشل إنشاء الحساب');
       }
 
-      // إنشاء الملف الشخصي
       try {
-        await client.from('profiles').insert({
+        // إنشاء الملف الشخصي للمستخدم
+        LoggerService.info('Creating profile for user: ${response.user!.id}');
+        
+        final profileData = {
           'id': response.user!.id,
           'email': email,
           'created_at': DateTime.now().toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
-        });
-      } catch (e) {
-        LoggerService.error('Error creating profile: $e');
-        // لا نريد أن نفشل عملية التسجيل إذا فشل إنشاء الملف الشخصي
+        };
+        
+        LoggerService.info('Profile data: $profileData');
+        
+        await client.from('profiles').insert(profileData);
+        LoggerService.info('Profile created successfully');
+      } catch (profileError) {
+        LoggerService.error('Error creating profile: $profileError');
+        // لا نريد إيقاف عملية التسجيل إذا فشل إنشاء الملف الشخصي
+        // سيتم إنشاؤه لاحقاً عبر التريجر
       }
 
       LoggerService.info('User signed up successfully: ${response.user?.id}');

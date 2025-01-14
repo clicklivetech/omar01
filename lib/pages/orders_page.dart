@@ -19,36 +19,49 @@ class OrdersPage extends StatelessWidget {
       appState.fetchUserOrders();
     });
 
-    if (appState.orders.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.shopping_bag_outlined,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'لا يوجد طلبات',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF6E58A8),
+        foregroundColor: Colors.white,
+        title: const Text(
+          'طلباتي',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: appState.orders.length,
-      padding: const EdgeInsets.all(16),
-      itemBuilder: (context, index) {
-        final order = appState.orders[index];
-        return _OrderCard(order: order);
-      },
+        centerTitle: true,
+      ),
+      body: appState.orders.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_bag_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'لا يوجد طلبات',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              itemCount: appState.orders.length,
+              padding: const EdgeInsets.all(16),
+              itemBuilder: (context, index) {
+                final order = appState.orders[index];
+                return _OrderCard(order: order);
+              },
+            ),
     );
   }
 }
