@@ -40,12 +40,7 @@ class AppState with ChangeNotifier {
     (sum, item) => sum + (item.price * item.quantity)
   );
 
-  int get cartItemsCount => _cartItems.length;  // Number of unique products in cart
-
-  int get totalCartItemsCount => _cartItems.fold(  // العدد الإجمالي للمنتجات في السلة
-    0,
-    (sum, item) => sum + item.quantity
-  );
+  int get cartItemsCount => _cartItems.length;  // عدد الأصناف الفريدة في السلة
 
   int get currentPageIndex => _currentPageIndex;
 

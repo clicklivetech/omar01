@@ -53,7 +53,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 top: 8,
                 child: Consumer<AppState>(
                   builder: (context, appState, child) {
-                    final cartItemCount = appState.totalCartItemsCount;
+                    final cartItemCount = appState.cartItemsCount;
                     return cartItemCount > 0
                         ? Container(
                             padding: const EdgeInsets.all(4),
