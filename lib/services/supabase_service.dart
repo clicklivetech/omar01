@@ -199,39 +199,39 @@ class SupabaseService {
     try {
       LoggerService.info('Attempting to sign up user with email: $email');
       
-      // محاولة تسجيل الدخول للتحقق من وجود المستخدم
-      try {
-        final signInResponse = await client.auth.signInWithPassword(
-          email: email,
-          password: password,
-        );
-        if (signInResponse.user != null) {
-          throw Exception('هذا البريد الإلكتروني مسجل بالفعل');
-        }
-      } catch (e) {
-        // إذا فشل تسجيل الدخول، فهذا يعني أن المستخدم غير موجود
-        if (!e.toString().contains('Invalid login credentials')) {
-          rethrow;
-        }
-      }
-      
       final response = await client.auth.signUp(
         email: email,
         password: password,
-        emailRedirectTo: null,
+        data: {
+          'email': email,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        },
       );
       
-      if (response.user == null && response.session == null) {
+      if (response.user == null) {
         LoggerService.error('User is null after signup');
         throw Exception('فشل إنشاء الحساب');
       }
 
-      LoggerService.info('User signed up successfully: ${response.user?.id}');
+      // إنشاء الملف الشخصي
+      try {
+        await client.from('profiles').insert({
+          'id': response.user!.id,
+          'email': email,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      } catch (e) {
+        LoggerService.error('Error creating profile: $e');
+        // لا نريد أن نفشل عملية التسجيل إذا فشل إنشاء الملف الشخصي
+      }
+
+      LoggerService.info('User signed up successfully: ${response.user.id}');
       return response;
     } catch (e) {
       LoggerService.error('Error in signUpWithEmail: $e');
-      if (e.toString().contains('User already registered') || 
-          e.toString().contains('duplicate key value')) {
+      if (e.toString().contains('User already registered')) {
         throw Exception('هذا البريد الإلكتروني مسجل بالفعل');
       }
       throw Exception('حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى');
