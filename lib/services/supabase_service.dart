@@ -199,6 +199,22 @@ class SupabaseService {
     try {
       LoggerService.info('Attempting to sign up user with email: $email');
       
+      // محاولة تسجيل الدخول للتحقق من وجود المستخدم
+      try {
+        final signInResponse = await client.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+        if (signInResponse.user != null) {
+          throw Exception('هذا البريد الإلكتروني مسجل بالفعل');
+        }
+      } catch (e) {
+        // إذا فشل تسجيل الدخول، فهذا يعني أن المستخدم غير موجود
+        if (!e.toString().contains('Invalid login credentials')) {
+          rethrow;
+        }
+      }
+      
       final response = await client.auth.signUp(
         email: email,
         password: password,
@@ -210,21 +226,12 @@ class SupabaseService {
         throw Exception('فشل إنشاء الحساب');
       }
 
-      // إنشاء سجل المستخدم في جدول profiles
-      if (response.user != null) {
-        await client.from('profiles').insert({
-          'id': response.user!.id,
-          'email': email,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        }).select();
-      }
-
       LoggerService.info('User signed up successfully: ${response.user?.id}');
       return response;
     } catch (e) {
       LoggerService.error('Error in signUpWithEmail: $e');
-      if (e.toString().toLowerCase().contains('user already registered')) {
+      if (e.toString().contains('User already registered') || 
+          e.toString().contains('duplicate key value')) {
         throw Exception('هذا البريد الإلكتروني مسجل بالفعل');
       }
       throw Exception('حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى');
