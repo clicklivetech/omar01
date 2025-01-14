@@ -199,44 +199,33 @@ class SupabaseService {
     try {
       LoggerService.info('Attempting to sign up user with email: $email');
       
-      // التحقق من وجود جدول profiles
-      try {
-        await client.from('profiles').select('id').limit(1);
-      } catch (e) {
-        // إنشاء جدول profiles إذا لم يكن موجوداً
-        await client.rpc('create_profiles_table');
-      }
-      
       final response = await client.auth.signUp(
         email: email,
         password: password,
+        emailRedirectTo: null,
       );
       
-      if (response.user == null) {
+      if (response.user == null && response.session == null) {
         LoggerService.error('User is null after signup');
         throw Exception('فشل إنشاء الحساب');
       }
 
       // إنشاء سجل المستخدم في جدول profiles
-      await client.from('profiles').insert({
-        'id': response.user!.id,
-        'email': email,
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      }).select();
+      if (response.user != null) {
+        await client.from('profiles').insert({
+          'id': response.user!.id,
+          'email': email,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        }).select();
+      }
 
-      LoggerService.info('User signed up successfully: ${response.user!.id}');
+      LoggerService.info('User signed up successfully: ${response.user?.id}');
       return response;
     } catch (e) {
       LoggerService.error('Error in signUpWithEmail: $e');
-      if (e.toString().contains('User already registered')) {
+      if (e.toString().toLowerCase().contains('user already registered')) {
         throw Exception('هذا البريد الإلكتروني مسجل بالفعل');
-      }
-      if (e.toString().contains('duplicate key value violates unique constraint')) {
-        throw Exception('هذا البريد الإلكتروني مسجل بالفعل');
-      }
-      if (e.toString().contains('relation "profiles" does not exist')) {
-        throw Exception('خطأ في النظام. يرجى المحاولة مرة أخرى لاحقاً');
       }
       throw Exception('حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى');
     }
