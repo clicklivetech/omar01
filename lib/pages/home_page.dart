@@ -33,54 +33,37 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadBanners();
-    _loadFeaturedProducts();
-    _loadDailyDeals();
+    _loadData();
   }
 
-  Future<void> _loadBanners() async {
+  Future<void> _loadData() async {
     try {
       final banners = await SupabaseService.getActiveBanners();
-      setState(() {
-        _banners = banners;
-        _isLoadingBanners = false;
-      });
+      final featuredProducts = await SupabaseService.getFeaturedProducts();
+      final dailyDeals = await SupabaseService.getDailyDeals();
+
+      if (mounted) {
+        setState(() {
+          _banners = banners;
+          _featuredProducts = featuredProducts;
+          _dailyDeals = dailyDeals;
+          _isLoadingBanners = false;
+          _isLoadingProducts = false;
+          _isLoadingDeals = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingBanners = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingBanners = false;
+          _isLoadingProducts = false;
+          _isLoadingDeals = false;
+        });
+      }
     }
   }
 
-  Future<void> _loadFeaturedProducts() async {
-    try {
-      final products = await SupabaseService.getFeaturedProducts();
-      setState(() {
-        _featuredProducts = products;
-        _isLoadingProducts = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingProducts = false;
-      });
-    }
-  }
-
-  Future<void> _loadDailyDeals() async {
-    try {
-      final deals = await SupabaseService.getDailyDeals();
-      setState(() {
-        _dailyDeals = deals;
-        _isLoadingDeals = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoadingDeals = false;
-      });
-    }
-  }
-
-  Widget _buildBannerSlider() {
+  Widget _buildBanners() {
     if (_isLoadingBanners) {
       return const SizedBox(
         height: 200,
@@ -92,25 +75,11 @@ class _HomePageState extends State<HomePage> {
       return const SizedBox.shrink();
     }
 
-    return CarouselSlider.builder(
-      itemCount: _banners.length,
-      options: CarouselOptions(
-        height: 200,
-        aspectRatio: 16 / 9,
-        viewportFraction: 0.9,
-        enableInfiniteScroll: true,
-        reverse: false,
-        autoPlay: true,
-        autoPlayInterval: const Duration(seconds: 3),
-        autoPlayAnimationDuration: const Duration(milliseconds: 800),
-        autoPlayCurve: Curves.fastOutSlowIn,
-        enlargeCenterPage: true,
-        scrollDirection: Axis.horizontal,
-      ),
-      itemBuilder: (context, index, realIndex) {
-        final banner = _banners[index];
+    return CarouselSlider(
+      items: _banners.map((banner) {
         return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 5),
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 5.0),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             color: banner.backgroundColor != null
@@ -177,7 +146,20 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         );
-      },
+      }).toList(),
+      options: CarouselOptions(
+        height: 200.0,
+        viewportFraction: 0.9,
+        initialPage: 0,
+        enableInfiniteScroll: true,
+        reverse: false,
+        autoPlay: true,
+        autoPlayInterval: const Duration(seconds: 3),
+        autoPlayAnimationDuration: const Duration(milliseconds: 800),
+        autoPlayCurve: Curves.fastOutSlowIn,
+        enlargeCenterPage: true,
+        scrollDirection: Axis.horizontal,
+      ),
     );
   }
 
@@ -430,16 +412,12 @@ class _HomePageState extends State<HomePage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait([
-            _loadBanners(),
-            _loadFeaturedProducts(),
-            _loadDailyDeals(),
-          ]);
+          await _loadData();
         },
         child: ListView(
           children: [
             const SizedBox(height: 16),
-            _buildBannerSlider(),
+            _buildBanners(),
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
